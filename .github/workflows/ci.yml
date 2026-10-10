@@ -21,6 +21,6 @@ jobs:
       - run: npm run package
       - uses: actions/upload-artifact@v4
         with:
-          name: study-mode-extension
-          path: artifacts/study-mode-extension.zip
+          name: focusmaxx-extension
+          path: artifacts/focusmaxx-extension.zip
           if-no-files-found: error

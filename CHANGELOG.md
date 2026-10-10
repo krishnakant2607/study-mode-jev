@@ -1,5 +1,15 @@
 # Changelog
 
+## 0.2.0 — FocusMaxx
+
+- Rename to FocusMaxx and refine the charcoal/orange panel.
+- Balanced 0.90 entertainment threshold; uncertain and unavailable decisions remain visible.
+- Positive/negative preferences, explicit exclusion priority and optional keyword hints.
+- Remove clickbait and mandatory lecture/relevance gates entirely.
+- Extend individual Shorts detection and pause blocked active-player media.
+- Reset legacy strict-policy caches/counters on upgrade.
+- Seventeen logic/worker tests and ten packaged browser checks.
+
 ## 0.1.1 — Download and install fix
 
 - Include a compiled `chrome-extension` folder in the repository source ZIP.

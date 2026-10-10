@@ -1,27 +1,22 @@
-# Verification report
+# FocusMaxx v0.2.0 verification
 
-Build checked on 10 October 2026. TypeScript type checking passed.
+Type checking and 17 logic/worker tests passed. Ten packaged Chromium integration checks passed with no page errors.
 
-## Automated logic and worker tests: 17 passed
+## Logic and worker coverage
 
-Semantic Python intent, general learning, off-topic education, uncertain evidence, clickbait and Shorts policy; malformed answers; metadata bounds; cache invalidation; duplicate counters; trusted senders and private credentials; concurrent request deduplication; stale keyword/session responses; rehearsal isolation; missing/rejected keys; transient rate-limit retry; failed repeat connection tests; key removal during an in-flight request.
+Balanced 0.90 boundary; useful videos without literal keywords; ambiguous judgments; explicit hide/allow priority and empty preferences; Shorts policy; strict typed-answer validation; absence of clickbait and mandatory education questions; preference cache invalidation; migration from legacy strict settings; unique counters; authored wildlife override; private-key/sender boundaries; concurrent deduplication; stale replies; rehearsal isolation; missing/rejected credentials and malformed replies staying visible; transient retry; failed connection status; key removal during an in-flight request.
 
-## Packaged browser tests: 9 passed
+## Browser coverage
 
-An isolated Chromium profile loaded the actual Manifest V3 build. Its API transport was explicitly mocked and YouTube navigation served authored HTML fixtures. No real key was used.
+1. FocusMaxx identity, key controls and optional hints.
+2. NeuralNine-style programming/framework/cloud examples and uncertain/engaging titles preserved; extracted title and channel verified.
+3. Modern, legacy and standalone Shorts detected individually; useful Shorts and shelves preserved.
+4. A reused covered card restores before re-evaluation.
+5. Active Shorts-player covers and actual media pause, tested with a silent WAV source; reused useful content restores.
+6. Saved wildlife allowances override entertainment; music exclusions win.
+7. Unsaved preference drafts survive background updates.
+8. Removing credentials restores cards under Balanced mode.
+9. Disabling restores content and keyboard interaction.
+10. Separate offline rehearsal and a 320px panel without overflow.
 
-1. Popup key controls, connection feedback and Python session setup.
-2. Home/search/related/lockup detection; covered titles invisible and underlying controls inert.
-3. Reused cards re-covered after their content changes.
-4. Duplicate cards use cached judgments without another inference call.
-5. Enter adds independent Python/DSA keywords; either lesson is allowed, matching memes covered, duplicate chips rejected.
-6. Keyword changes reclassify cards and reveal the relevant lesson.
-7. Missing titles stay covered until details arrive and permit classification.
-8. Disabling restores original content and keyboard interaction.
-9. Separate offline rehearsal and a 320px sidebar without horizontal overflow.
-
-No page errors were recorded. Generated captures: `artifacts/panel.png`, `artifacts/sidebar-320.png`, `artifacts/rehearsal.png`. The final captures show settled switches, authored-decision status and the complete embedded panel. A separate finish review identified the status and credential-race issues; both were fixed and regression tested.
-
-## Still required before the live demo
-
-User-supplied API access and account quota; actual YouTube layout detection in the presentation profile; real Jev decision-quality calibration; venue connectivity; manual native sidebar opening. Automated mock tests cannot establish these. Follow `DEMO.md`.
+All browser data and model responses were authored/mocked. Real YouTube layouts and live Jev decision quality remain unverified. Screenshots are under `docs/assets`; the live readiness plan is in `DEMO.md`.

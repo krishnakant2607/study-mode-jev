@@ -1,85 +1,76 @@
 // src/fixtures.ts
-var yes = { education: 0.98, entertainment: 0.02, relevance: 0.98, clickbait: 0.03, sufficient: 0.99 };
-var fun = { education: 0.02, entertainment: 0.99, relevance: 0.02, clickbait: 0.65, sufficient: 0.98 };
+var useful = { entertainment: 0.03, preferred: 0, excluded: 0 };
+var fun = { entertainment: 0.98, preferred: 0, excluded: 0 };
+var v = (id, title, description, shorts = false, channel = "FocusMaxx sample channel") => ({ id, title, description, shorts, channel, duration: shorts ? "0:45" : "14:32" });
 var samples = [
-  { video: { id: "python_lesson", title: "Python functions, explained with real examples", channel: "The Coding Classroom", description: "Learn parameters, return values and reusable functions.", duration: "14:32", shorts: false }, judgments: { python: yes, javascript: { ...yes, relevance: 0.08 } } },
-  { video: { id: "snake_video", title: "Giant python surprises everyone at the zoo", channel: "Wild Moments", description: "An unexpected animal encounter.", duration: "8:12", shorts: false }, judgments: { python: fun, javascript: fun } },
-  { video: { id: "python_project", title: "Build a Python expense tracker from scratch", channel: "Build & Learn", description: "A practical project covering CSV files and functions.", duration: "28:45", shorts: false }, judgments: { python: yes, javascript: { ...yes, relevance: 0.05 } } },
-  { video: { id: "coding_memes", title: "Python developers react to programming memes", channel: "After Hours", description: "Funny reactions and jokes.", duration: "11:06", shorts: false }, judgments: { python: { ...fun, relevance: 0.9 }, javascript: fun } },
-  { video: { id: "javascript_lesson", title: "JavaScript closures: a visual explanation", channel: "The Coding Classroom", description: "Understand lexical scope through worked examples.", duration: "17:20", shorts: false }, judgments: { python: { ...yes, relevance: 0.05 }, javascript: yes } },
-  { video: { id: "physics_lesson", title: "The physics behind impossible basketball shots", channel: "Everyday Science", description: "An entertaining explanation of projectile motion.", duration: "12:40", shorts: false }, judgments: { python: { ...yes, relevance: 0.03 }, javascript: { ...yes, relevance: 0.03 } } },
-  { video: { id: "coding_short", title: "One Python trick in sixty seconds", channel: "Quick Code", description: "A short demonstration of list slicing.", duration: "0:59", shorts: true }, judgments: { python: yes, javascript: { ...yes, relevance: 0.02 } } },
-  { video: { id: "unclear_video", title: "You need to see this\u2026", channel: "Something New", description: "", duration: "9:15", shorts: false }, judgments: { python: { ...yes, education: 0.5, sufficient: 0.25, relevance: 0.5 }, javascript: { ...yes, education: 0.5, sufficient: 0.25, relevance: 0.5 } } },
-  { video: { id: "riches_video", title: "Learn Python and get RICH overnight \u2014 the secret method", channel: "Shortcut Academy", description: "Big promises with no clear lesson.", duration: "10:10", shorts: false }, judgments: { python: { ...yes, education: 0.85, clickbait: 0.99 }, javascript: { ...yes, relevance: 0.02, clickbait: 0.99 } } },
-  { video: { id: "dsa_lesson", title: "DSA: binary search and time complexity explained", channel: "Algorithm Classroom", description: "Learn data structures and algorithms through worked examples.", duration: "21:05", shorts: false }, judgments: { python: { ...yes, relevance: 0.02 }, javascript: { ...yes, relevance: 0.02 }, dsa: yes } },
-  { video: { id: "dsa_memes", title: "DSA interview memes that are too relatable", channel: "After Hours", description: "Funny interview reactions.", duration: "7:40", shorts: false }, judgments: { python: fun, javascript: fun, dsa: { ...fun, relevance: 0.99 } } }
+  { video: v("python_lesson", "GraphRAG in Python: practical knowledge graphs", "A worked programming demonstration."), judgment: useful },
+  { video: v("snake_video", "Python snake behaviour: field observations", "Wildlife research observations of movement and hunting.", false, "Wildlife Field Notes"), judgment: { ...useful, entertainment: 0.15 } },
+  { video: v("pydantic_lesson", "Pydantic AI crash course", "A framework walkthrough for agent developers."), judgment: useful },
+  { video: v("coding_memes", "Python developers react to programming memes", "Funny reactions and jokes."), judgment: fun },
+  { video: v("javascript_lesson", "LangGraph: agent workflows explained", "A practical developer tool demonstration."), judgment: useful },
+  { video: v("music_video", "Live music performance: evening session", "A full musical performance.", false, "Music Sessions"), judgment: fun },
+  { video: v("coding_short", "One Python trick in sixty seconds", "A short explanation of list slicing.", true), judgment: useful },
+  { video: v("unclear_video", "You need to see this\u2026", ""), judgment: { ...useful, entertainment: 0.5 } },
+  { video: v("dramatic_lesson", "This Python trick will BLOW YOUR MIND", "An explained demonstration of generators."), judgment: useful },
+  { video: v("dsa_lesson", "DSA: binary search and time complexity", "Worked data structures and algorithms examples."), judgment: useful },
+  { video: v("dsa_memes", "DSA interview memes that are too relatable", "Funny interview reactions.", true), judgment: fun },
+  { video: v("wildlife_short", "Snake movement captured in the field", "Wildlife observation without narration.", true, "Wildlife Field Notes"), judgment: { ...useful, entertainment: 0.92 } }
 ];
-function fixtureJudgment(v, keywords) {
-  const sample = samples.find((s) => s.video.id === v.id && s.video.title === v.title);
-  if (!sample) throw new Error("This item has no authored rehearsal judgment.");
-  if (!keywords.length) return { ...sample.judgments.python, relevance: 0.98 };
-  const choices = keywords.map((k) => sample.judgments[k.toLowerCase()]).filter(Boolean);
-  if (choices.length) return { ...sample.judgments.python, relevance: Math.max(...choices.map((j) => j.relevance)) };
-  return { ...sample.judgments.python, relevance: 0.5, sufficient: 0.5 };
+function fixtureJudgment(video, settings) {
+  const sample = samples.find((s) => s.video.id === video.id && s.video.title === video.title);
+  if (!sample) throw new Error("No authored rehearsal judgment for this sample.");
+  const j = { ...sample.judgment };
+  if (/wildlife|animal|snake|documentar/i.test(settings.allowPreference) && /snake|wildlife/i.test(video.title)) j.preferred = 0.98;
+  if (/music/i.test(settings.allowPreference) && video.id === "music_video") j.preferred = 0.98;
+  if (/music/i.test(settings.hidePreference) && video.id === "music_video") j.excluded = 0.99;
+  if (/memes|pranks/i.test(settings.hidePreference) && /memes|pranks/i.test(video.title)) j.excluded = 0.99;
+  return j;
 }
 
 // src/core.ts
 var DEFAULT_MODEL = "jev-latest";
-var defaults = { enabled: false, keywords: [], hideClickbait: true, hideShorts: true, model: DEFAULT_MODEL };
+var BLOCK_THRESHOLD = 0.9;
+var defaults = { enabled: false, keywords: [], allowPreference: "", hidePreference: "", filterShorts: true, model: DEFAULT_MODEL };
 var sessionClock = 0;
 var newStats = () => ({ startedAt: sessionClock = Math.max(Date.now(), sessionClock + 1), events: [] });
 function cleanKeywords(raw) {
   const unique = /* @__PURE__ */ new Map();
   for (const value of raw) if (typeof value === "string") {
-    const keyword = value.normalize("NFKC").trim().replace(/\s+/g, " ").slice(0, 60);
-    if (keyword && !unique.has(keyword.toLowerCase())) unique.set(keyword.toLowerCase(), keyword);
+    const k = value.normalize("NFKC").trim().replace(/\s+/g, " ").slice(0, 60);
+    if (k && !unique.has(k.toLowerCase())) unique.set(k.toLowerCase(), k);
   }
   return [...unique.values()].slice(0, 20);
 }
-function matchesKeywords(v, keywords) {
-  if (!keywords.length) return true;
-  const text = [v.title, v.channel, v.description].join(" ").normalize("NFKC").toLowerCase().replace(/\s+/g, " ");
-  return keywords.some((keyword) => {
-    const escaped = keyword.toLowerCase().replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
-    return new RegExp(`(?<![\\p{L}\\p{N}_])${escaped}(?![\\p{L}\\p{N}_])`, "u").test(text);
-  });
-}
 function cleanSettings(raw, base = defaults) {
-  const values = raw && typeof raw === "object" ? raw : {};
-  return {
-    enabled: typeof values.enabled === "boolean" ? values.enabled : base.enabled,
-    keywords: Array.isArray(values.keywords) ? cleanKeywords(values.keywords) : typeof values.topic === "string" ? cleanKeywords([values.topic]) : [...base.keywords],
-    hideClickbait: typeof values.hideClickbait === "boolean" ? values.hideClickbait : base.hideClickbait,
-    hideShorts: typeof values.hideShorts === "boolean" ? values.hideShorts : base.hideShorts,
-    model: typeof values.model === "string" && /^jev-[a-zA-Z0-9.-]{1,40}$/.test(values.model) ? values.model : base.model
-  };
+  const v2 = raw && typeof raw === "object" ? raw : {};
+  const preference = (x, fallback) => typeof x === "string" ? x.trim().slice(0, 1500) : fallback;
+  return { enabled: typeof v2.enabled === "boolean" ? v2.enabled : base.enabled, keywords: Array.isArray(v2.keywords) ? cleanKeywords(v2.keywords) : typeof v2.topic === "string" ? cleanKeywords([v2.topic]) : [...base.keywords], allowPreference: preference(v2.allowPreference, base.allowPreference), hidePreference: preference(v2.hidePreference, base.hidePreference), filterShorts: typeof v2.filterShorts === "boolean" ? v2.filterShorts : base.filterShorts, model: typeof v2.model === "string" && /^jev-[a-zA-Z0-9.-]{1,40}$/.test(v2.model) ? v2.model : base.model };
 }
 function normalizeVideo(raw) {
-  const v = raw;
-  if (!v || typeof v.id !== "string" || !/^[a-zA-Z0-9_-]{3,80}$/.test(v.id) || typeof v.title !== "string") throw new Error("Invalid video metadata.");
-  const text = (x, limit) => typeof x === "string" ? x.replace(/\s+/g, " ").trim().slice(0, limit) : "";
-  return { id: v.id, title: text(v.title, 500), channel: text(v.channel, 200), description: text(v.description, 1e3), duration: text(v.duration, 30), shorts: v.shorts === true };
+  const v2 = raw;
+  if (!v2 || typeof v2.id !== "string" || !/^[a-zA-Z0-9_-]{3,80}$/.test(v2.id) || typeof v2.title !== "string") throw new Error("Invalid video metadata.");
+  const text = (x, n) => typeof x === "string" ? x.replace(/\s+/g, " ").trim().slice(0, n) : "";
+  return { id: v2.id, title: text(v2.title, 500), channel: text(v2.channel, 200), description: text(v2.description, 1e3), duration: text(v2.duration, 30), shorts: v2.shorts === true, pageContext: text(v2.pageContext, 300) };
 }
-function decide(j, v, s, source) {
-  if (s.hideShorts && v.shorts) return { kind: "cover", reason: "shorts", source: "local" };
-  if (j.entertainment >= 0.75) return { kind: "cover", reason: "entertainment", source };
-  if (s.keywords.length && (!matchesKeywords(v, s.keywords) || j.relevance <= 0.3)) return { kind: "cover", reason: "off_topic", source };
-  if (s.hideClickbait && j.clickbait >= 0.8) return { kind: "cover", reason: "clickbait", source };
-  if (j.sufficient < 0.8 || j.education < 0.8 || j.entertainment > 0.3 || s.keywords.length > 0 && j.relevance < 0.8) return { kind: "cover", reason: "uncertain", source };
-  return { kind: "allow", source };
+function decide(j, v2, s, source) {
+  if (v2.shorts && !s.filterShorts) return { kind: "allow", source: "local" };
+  if (s.hidePreference && j.excluded >= BLOCK_THRESHOLD) return { kind: "cover", reason: "excluded", source, judgment: j };
+  if (s.allowPreference && j.preferred >= BLOCK_THRESHOLD) return { kind: "allow", reason: "preferred", source, judgment: j };
+  if (j.entertainment >= BLOCK_THRESHOLD) return { kind: "cover", reason: "entertainment", source, judgment: j };
+  return { kind: "allow", reason: j.entertainment > 0.1 ? "uncertain" : void 0, source, judgment: j };
 }
-function record(stats, id, decision, at = Date.now()) {
-  const event = { id, kind: decision.kind, reason: decision.reason, source: decision.source, latencyMs: decision.latencyMs, at };
-  const existing = stats.events.findIndex((e) => e.id === id);
+function record(stats, id, d, at = Date.now()) {
+  const event = { id, kind: d.kind, reason: d.reason, at, source: d.source, latencyMs: d.latencyMs };
   const events = [...stats.events];
-  if (existing >= 0) events[existing] = event;
+  const index = events.findIndex((e) => e.id === id);
+  if (index >= 0) events[index] = event;
   else events.push(event);
   return { ...stats, events: events.slice(-1500) };
 }
 
 // src/client.ts
 var installed = typeof chrome !== "undefined" && Boolean(chrome.runtime?.id);
-var PREVIEW_KEY = "study-mode-rehearsal-v1";
+var PREVIEW_KEY = "focusmaxx-rehearsal-v3";
 function readPreview() {
   try {
     const stored = localStorage.getItem(PREVIEW_KEY);
@@ -109,7 +100,7 @@ async function rpc(type, extra = {}) {
     const rehearsal = extra.scope === "rehearsal";
     const base = rehearsal ? state.rehearsalSettings : state.settings;
     const settings = cleanSettings(extra.settings || {}, base);
-    if (JSON.stringify(settings.keywords) !== JSON.stringify(base.keywords)) state[rehearsal ? "rehearsal" : "stats"] = newStats();
+    if (JSON.stringify(settings) !== JSON.stringify(base)) state[rehearsal ? "rehearsal" : "stats"] = newStats();
     state[rehearsal ? "rehearsalSettings" : "settings"] = settings;
     writePreview(state);
     return state;
@@ -121,7 +112,7 @@ async function rpc(type, extra = {}) {
   }
   if (type === "CLASSIFY") {
     const video = normalizeVideo(extra.video);
-    const decision = state.rehearsalSettings.hideShorts && video.shorts ? { kind: "cover", reason: "shorts", source: "local" } : !matchesKeywords(video, state.rehearsalSettings.keywords) ? { kind: "cover", reason: "off_topic", source: "local" } : decide(fixtureJudgment(video, state.rehearsalSettings.keywords), video, state.rehearsalSettings, "rehearsal");
+    const decision = decide(fixtureJudgment(video, state.rehearsalSettings), video, state.rehearsalSettings, "rehearsal");
     state.rehearsal = record(state.rehearsal, video.id, decision);
     writePreview(state);
     return decision;
@@ -165,12 +156,12 @@ var cards = document.getElementById("cards");
 var art = (kind) => kind === 0 ? '<path d="M30 30h150v100H30z" fill="#303936"/><path d="m65 65-20 15 20 15m65-30 20 15-20 15m-25-38-15 65" fill="none" stroke="#b8d1c0" stroke-width="8" stroke-linecap="round"/>' : kind === 1 ? '<path d="M40 40c80 0 0 90 80 90s65-80 0-60" fill="none" stroke="#d0aa78" stroke-width="18" stroke-linecap="round"/><circle cx="153" cy="70" r="3" fill="#151515"/>' : '<rect x="35" y="25" width="150" height="105" rx="8" fill="#343332"/><path d="M55 50h70m-70 20h110m-110 20h85m-85 20h55" stroke="#bdb5a8" stroke-width="5" stroke-linecap="round"/>';
 function add(index) {
   const sample = samples[index % samples.length];
-  const v = sample.video;
+  const v2 = sample.video;
   const card = document.createElement("article");
   card.className = "demo-video";
   card.dataset.studyCard = "";
   const link = document.createElement("a");
-  link.href = v.shorts ? `https://www.youtube.com/shorts/${v.id}` : `https://www.youtube.com/watch?v=${v.id}`;
+  link.href = v2.shorts ? `https://www.youtube.com/shorts/${v2.id}` : `https://www.youtube.com/watch?v=${v2.id}`;
   link.addEventListener("click", (e) => e.preventDefault());
   const thumbnail = document.createElement("div");
   thumbnail.className = "demo-thumbnail";
@@ -178,19 +169,19 @@ function add(index) {
   const duration = document.createElement("span");
   duration.className = "demo-duration";
   duration.dataset.studyDuration = "";
-  duration.textContent = v.duration;
+  duration.textContent = v2.duration;
   thumbnail.append(duration);
   const title = document.createElement("h3");
   title.dataset.studyTitle = "";
-  title.textContent = v.title;
+  title.textContent = v2.title;
   const channel = document.createElement("div");
   channel.className = "channel";
   channel.dataset.studyChannel = "";
-  channel.textContent = v.channel;
+  channel.textContent = v2.channel;
   const description = document.createElement("span");
   description.hidden = true;
   description.dataset.studyDescription = "";
-  description.textContent = v.description;
+  description.textContent = v2.description;
   link.append(thumbnail, title, channel, description);
   card.append(link);
   cards.append(card);

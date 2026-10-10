@@ -1,5 +1,5 @@
 import {reasonLabel, type Stats, type Decision, type PublicState, type Settings, type Video} from './core';
-import {CARD_SELECTOR, extractCard, findCards} from './detector';
+import {extractCard, findCards} from './detector';
 import {installed, rpc} from './client';
 type Tracked = {video: Video; signature: string; epoch: number; queued: boolean; overlay?: HTMLElement};
 let settings: Settings | undefined;
@@ -26,7 +26,7 @@ function cover(card: Element, label: string, reason = 'pending') {
     if (row) row.overlay = overlay;
   }
   overlay.querySelector('strong')!.textContent = label;
-  overlay.querySelector('.study-cover-sub')!.textContent = reason === 'pending' ? 'Checking learning relevance' : 'Study Mode keeps your attention here';
+  overlay.querySelector('.study-cover-sub')!.textContent = reason === 'pending' ? 'FocusMaxx checks your preferences' : 'FocusMaxx keeps distractions out';
   // Hide the original from keyboard navigation and accessibility, not just pixels.
   for (const child of [...card.children]) if (child !== overlay) {
     if (!child.hasAttribute('data-study-original-inert')) child.setAttribute('data-study-original-inert', child.hasAttribute('inert') ? '1' : '0');
@@ -45,7 +45,7 @@ function reveal(card: Element) {
 }
 function apply(card: Element, d: Decision) {
   if (d.kind === 'allow') reveal(card);
-  else cover(card, d.reason ? reasonLabel[d.reason] : 'Hidden by Study Mode', d.reason || 'uncertain');
+  else {cover(card,d.reason?reasonLabel[d.reason]:'Hidden by FocusMaxx',d.reason||'entertainment');for(const video of card.querySelectorAll('video'))video.pause();}
 }
 function visible(card: Element) {
   const rect = card.getBoundingClientRect();
@@ -69,7 +69,7 @@ async function pump() {
       if (JSON.stringify(extractCard(card)) !== JSON.stringify(video)) {schedule(); return;}
       decisions.set(signature, decision); apply(card, decision);
     }).catch(() => {
-      if (enabled && requestEpoch === epoch && tracked.get(card)?.signature === signature) cover(card, 'Connection unavailable', 'connection');
+      if (enabled && requestEpoch === epoch && tracked.get(card)?.signature === signature) reveal(card);
     }).finally(() => {active--; pump();});
   }
 }
@@ -81,17 +81,14 @@ function scan() {
     if (!enabled) {for (const card of document.querySelectorAll('.study-covered')) reveal(card); return;}
     for (const card of findCards()) {
       const video = extractCard(card);
-      if (!video) {if (card.querySelector('a[href*="/watch?v="],a[href^="/shorts/"]')) cover(card,'Waiting for video details','uncertain');continue;}
+      if (!video) {reveal(card);continue;}
       const signature = JSON.stringify(video);
       const old = tracked.get(card);
       if (old?.signature === signature && old.epoch === epoch) {if (!old.queued) enqueue(card); continue;}
       const row = {video, signature, epoch, queued:false}; tracked.set(card,row);
       const known = decisions.get(signature);
       if (known) {apply(card,known); row.queued = true;}
-      else {cover(card, 'Checking…'); observer.observe(card); enqueue(card);}
-    }
-    if (settings?.hideShorts) {
-      for (const shelf of document.querySelectorAll('ytd-reel-shelf-renderer,yt-horizontal-list-renderer:has(a[href^="/shorts/"])')) cover(shelf, 'Shorts are hidden', 'shorts');
+      else {reveal(card);observer.observe(card);enqueue(card);}
     }
   } finally {scanning = false;}
 }
@@ -111,35 +108,21 @@ function protect(event: Event) {
 }
 for (const event of ['click', 'pointerover', 'mouseover', 'focusin']) document.addEventListener(event, protect, true);
 document.addEventListener('yt-navigate-finish', schedule);
+document.addEventListener('play',event=>{if(enabled&&event.target instanceof HTMLVideoElement&&event.target.closest('.study-covered'))event.target.pause();},true);
 document.addEventListener('DOMContentLoaded', schedule);
 document.addEventListener('scroll', schedule, {passive:true});
 const mutations = new MutationObserver(records => {
   const relevant = records.filter(r => !(r.target instanceof Element) || !r.target.closest('.study-cover'));
   if (!relevant.length) return;
-  // Cover inserted/reused candidates in this mutation microtask, before the debounced scan.
-  if (enabled) {
-    const candidates = new Set<Element>();
-    for (const record of relevant) {
-      const target = record.target instanceof Element ? record.target : record.target.parentElement;
-      const parent = target?.closest(CARD_SELECTOR); if (parent) candidates.add(parent);
-      for (const node of record.addedNodes) if (node instanceof Element && !node.matches('.study-cover')) {
-        if (node.matches(CARD_SELECTOR) && !node.parentElement?.closest(CARD_SELECTOR)) candidates.add(node);
-        for (const card of findCards(node)) candidates.add(card);
-      }
-    }
-    for (const card of candidates) {
-      const video = extractCard(card);
-      if (video && tracked.get(card)?.signature !== JSON.stringify(video)) cover(card, 'Checking…');
-      else if (!video && card.querySelector('a[href*="/watch?v="],a[href^="/shorts/"]')) cover(card, 'Waiting for video details', 'uncertain');
-    }
-  }
+  // Reused cards lose a stale cover immediately. Unknown content stays visible.
+  if(enabled)for(const [card,row] of tracked)if(card.isConnected&&JSON.stringify(extractCard(card))!==row.signature)reveal(card);
   schedule();
 });
-mutations.observe(document.documentElement,{childList:true,subtree:true,characterData:true,attributes:true,attributeFilter:['href','title','aria-label']});
+mutations.observe(document.documentElement,{childList:true,subtree:true,characterData:true,attributes:true,attributeFilter:['href','title','aria-label','video-id','is-active','active']});
 if (installed) chrome.runtime.onMessage.addListener(message => {if (message.type === 'STUDY_STATE') stateChanged(message.state);});
 send('GET_STATE').then(stateChanged).catch(() => {
-  // No settings can be read after an extension reload; preserve covers and instruct recovery.
-  for (const card of document.querySelectorAll('.study-covered')) cover(card,'Reload this tab to reconnect','connection');
+  // No settings can be read after an extension reload; restore the page under the balanced policy.
+  for (const card of document.querySelectorAll('.study-covered')) reveal(card);
 });
 if (isDemo && installed) chrome.storage.onChanged.addListener(changes => {
   if (changes.rehearsalSettings || (changes.rehearsal?.newValue as Stats | undefined)?.startedAt !== (changes.rehearsal?.oldValue as Stats | undefined)?.startedAt) send('GET_STATE').then(stateChanged).catch(() => undefined);

@@ -1,7 +1,7 @@
 {
   "schemaVersion": 2,
-  "generatedAt": "2026-10-10T08:19:43.489533+00:00",
-  "title": "Design System: Study Mode",
+  "generatedAt": "2026-10-10T09:53:10.036335+00:00",
+  "title": "Design System: FocusMaxx",
   "extensions": {
     "colorMeta": {
       "orange": {
@@ -55,7 +55,7 @@
   ],
   "narrative": {
     "northStar": "User-supplied charcoal and orange dashboard references",
-    "overview": "Premium compact utility. Learning controls lead; truthful analytics support them. Tonal depth, clear focus and explicit rehearsal states define the panel.",
+    "overview": "Refined charcoal and orange utility. Balanced controls lead; personal allow/hide preferences are a separate, clean workspace. Real visible/covered counts support the task.",
     "keyCharacteristics": [
       "Charcoal tonal surfaces",
       "Warm orange actions",
@@ -64,8 +64,9 @@
     ],
     "rules": [],
     "dos": [
-      "Keep learning controls before analytics.",
-      "Label rehearsal and live status."
+      "Keep useful and uncertain content visible.",
+      "Label authored rehearsal.",
+      "Preserve preference drafts during background updates."
     ],
     "donts": [
       "Invent time-saved claims.",

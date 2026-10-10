@@ -1,8 +1,8 @@
 {
   "manifest_version": 3,
-  "name": "Study Mode \u2014 YouTube for learning",
-  "description": "Keep learning videos in view. Cover distracting YouTube recommendations with topic-aware Jev decisions.",
-  "version": "0.1.1",
+  "name": "FocusMaxx \u2014 Your attention, your rules",
+  "description": "Balanced YouTube filtering with personal allow/hide preferences. Useful and uncertain content stays visible.",
+  "version": "0.2.0",
   "minimum_chrome_version": "116",
   "permissions": [
     "storage",

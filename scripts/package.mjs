@@ -1,15 +1,18 @@
 import {spawnSync} from 'node:child_process';
 import {mkdir,cp,rm} from 'node:fs/promises';
 await rm('artifacts/package',{recursive:true,force:true});
-await rm('artifacts/study-mode-extension.zip',{force:true});
+await rm('artifacts/focusmaxx-extension.zip',{force:true});
 await mkdir('artifacts/package',{recursive:true});
-await cp('dist','artifacts/package/study-mode',{recursive:true,filter:(source)=>!source.includes('test-modules')});
-for (const name of ['README.md','DEMO.md','CONTRIBUTING.md','CHANGELOG.md','PRODUCT.md','DESIGN.md','TEST_REPORT.md']) await cp(name,`artifacts/package/study-mode/${name}`);
-await cp('docs','artifacts/package/study-mode/docs',{recursive:true});
-const r=spawnSync('/usr/bin/zip',['-r','-q','../study-mode-extension.zip','study-mode'],{cwd:'artifacts/package',stdio:'inherit'});
+await cp('dist','artifacts/package/focusmaxx',{recursive:true,filter:(source)=>!source.includes('test-modules')});
+for (const name of ['README.md','DEMO.md','CONTRIBUTING.md','CHANGELOG.md','PRODUCT.md','DESIGN.md','TEST_REPORT.md']) await cp(name,`artifacts/package/focusmaxx/${name}`);
+await cp('docs','artifacts/package/focusmaxx/docs',{recursive:true});
+const r=spawnSync('/usr/bin/zip',['-r','-q','../focusmaxx-extension.zip','focusmaxx'],{cwd:'artifacts/package',stdio:'inherit'});
 if(r.status!==0)throw new Error('Could not create extension ZIP.');
 await rm('chrome-extension',{recursive:true,force:true});
 await cp('dist','chrome-extension',{recursive:true,filter:source=>!source.includes('test-modules')});
 await mkdir('downloads',{recursive:true});
-await cp('artifacts/study-mode-extension.zip','downloads/study-mode-extension.zip');
-console.log('Ready to load: chrome-extension/; install ZIP: downloads/study-mode-extension.zip');
+await cp('artifacts/focusmaxx-extension.zip','downloads/focusmaxx-extension.zip');
+console.log('Ready to load: chrome-extension/; install ZIP: downloads/focusmaxx-extension.zip');
+
+// Preserve the previously shared direct download URL.
+await cp('artifacts/focusmaxx-extension.zip','downloads/study-mode-extension.zip');

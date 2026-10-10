@@ -1,7 +1,7 @@
-import {matchesKeywords, cleanSettings, defaults, decide, newStats, normalizeVideo, record, type PublicState, type Settings} from './core';
+import {cleanSettings, defaults, decide, newStats, normalizeVideo, record, type PublicState, type Settings} from './core';
 import {fixtureJudgment} from './fixtures';
 export const installed = typeof chrome !== 'undefined' && Boolean(chrome.runtime?.id);
-const PREVIEW_KEY = 'study-mode-rehearsal-v1';
+const PREVIEW_KEY = 'focusmaxx-rehearsal-v3';
 function readPreview(): PublicState {
   try {const stored = localStorage.getItem(PREVIEW_KEY); if (stored) {const state=JSON.parse(stored);state.settings=cleanSettings(state.settings);state.rehearsalSettings=cleanSettings(state.rehearsalSettings);return state;}} catch { /* A private window can restrict storage. */ }
   return {settings:{...defaults},rehearsalSettings:{...defaults,enabled:true,keywords:['python']},hasKey:false,stats:newStats(),rehearsal:newStats(),connection:{ok:false,message:'Rehearsal · authored decisions, no live inference',at:0}};
@@ -22,13 +22,13 @@ export async function rpc(type: string, extra: Record<string,unknown> = {}): Pro
     const rehearsal = extra.scope === 'rehearsal';
     const base = rehearsal ? state.rehearsalSettings : state.settings;
     const settings = cleanSettings((extra.settings || {}) as Partial<Settings>,base);
-    if (JSON.stringify(settings.keywords) !== JSON.stringify(base.keywords)) state[rehearsal ? 'rehearsal' : 'stats'] = newStats();
+    if (JSON.stringify(settings) !== JSON.stringify(base)) state[rehearsal ? 'rehearsal' : 'stats'] = newStats();
     state[rehearsal ? 'rehearsalSettings' : 'settings']=settings;writePreview(state);return state;
   }
   if (type === 'RESET_SESSION') {state[extra.scope==='rehearsal'?'rehearsal':'stats']=newStats();writePreview(state);return state;}
   if (type === 'CLASSIFY') {
     const video=normalizeVideo(extra.video);
-    const decision=state.rehearsalSettings.hideShorts && video.shorts ? {kind:'cover' as const,reason:'shorts' as const,source:'local' as const} : !matchesKeywords(video,state.rehearsalSettings.keywords) ? {kind:'cover' as const,reason:'off_topic' as const,source:'local' as const} : decide(fixtureJudgment(video,state.rehearsalSettings.keywords),video,state.rehearsalSettings,'rehearsal');
+    const decision=decide(fixtureJudgment(video,state.rehearsalSettings),video,state.rehearsalSettings,'rehearsal');
     state.rehearsal=record(state.rehearsal,video.id,decision);writePreview(state);return decision;
   }
   if (type === 'OPEN_DEMO') {window.open('demo.html','_blank','noopener');return {ok:true};}

@@ -1,33 +1,33 @@
-# Architecture
+# FocusMaxx architecture
 
-## Deterministic perception and execution
+## Perception
 
-`src/detector.ts` discovers known desktop YouTube card renderers and extracts bounded titles, channels, descriptions, durations and video IDs. `src/content.ts` covers new and reused candidates, prioritizes visible/nearby cards, observes navigation and mutations, and restores original content and keyboard interaction when disabled. Opaque covers hide the entire card and make original controls inert.
+`detector.ts` extracts bounded titles, channels, displayed snippets, duration, Shorts status and available channel-page context from recognized desktop YouTube renderers. It includes modern/legacy Shorts cards, standalone image-bearing Shorts links and an active `ytd-reel-video-renderer`. It never watches videos or sends thumbnail images, audio or transcripts.
 
-Keyword matching is case-insensitive and uses whole keywords or phrases across each card's title, channel and description. It accepts any of up to twenty keywords. Nonmatching cards are covered locally. Empty lists allow general learning evaluation. Existing single-topic settings migrate to a keyword list.
+## Judgment and policy
 
-## Jev decision layer
+`core.ts` supplies three Jev Noul questions: primarily entertainment, explicit positive preference match, explicit negative preference match. Keywords are optional semantic hints; missing keywords never reject a video. There is no clickbait question or requirement for lecture-style teaching. Channel context supports a decision without granting a blanket exemption.
 
-`src/background.ts` owns credentials and communicates with `https://api.typesafe.ai/v1/systemone`. `src/core.ts` supplies five named Noul questions: education, entertainment, relevance to any keyword, clickbait and evidence sufficiency. Every answer must have the expected type and a finite value in [0,1]. Display thresholds are conservative initial policy, not measured accuracy guarantees.
+The deterministic policy is: explicit hide match ≥0.90 covers; explicit allow match ≥0.90 keeps; otherwise entertainment ≥0.90 covers; all other judgments keep. Empty preference fields cannot match, even if a model incorrectly assigns high preference scores. Invalid replies, missing credentials and transport failures keep content visible. Thresholds are initial policy and need live calibration.
 
-Transport concurrency is bounded to three. Failures and transient rate limits get one bounded retry. Duplicate in-flight evaluations share a request. Identical metadata/keyword/model evaluations reuse a local 24-hour cache, capped at 1,000 entries. A changed key clears the cache and invalidates pending replies. Changed keywords/sessions reject stale display replies.
+## Execution
+
+`content.ts` observes card insertion, navigation and metadata changes. Unknown and pending cards remain visible. Final cover decisions hide the original card and mark its children inert. Disabling restores content and keyboard interaction. Reused cards lose stale covers before re-evaluation. Blocked Shorts-player media is paused; a play event on a covered player is also stopped. The implementation does not auto-resume media after revealing it.
+
+Three requests may run concurrently. Duplicate in-flight requests share a result. A 24-hour cache is keyed by rubric version, metadata, hints, preferences and model. Key changes clear the cache and invalidate pending replies. Preference/session changes reject stale display results. The new rubric discards prior strict-policy caches and resets their counters on upgrade.
 
 ## State and activity
 
-Settings, keys, counters and cache live in trusted extension storage. Public snapshots omit the key. Only extension pages can change settings or credentials; only the expected YouTube origin or extension-owned demo can request classification. The rehearsal cannot be requested by YouTube clients.
-
-Counters retain the most recent 1,500 unique video IDs in a session. Repeated IDs replace their prior decision. Entire Shorts shelves may be covered without being counted as individually evaluated videos. Activity never repeats hidden titles or estimates time saved from video duration.
+`background.ts` owns credentials and trusted-message boundaries. Public snapshots never contain the key. Only extension pages can modify preferences or credentials. Real YouTube cannot request the authored rehearsal mode. Session outcomes retain the most recent 1,500 unique video IDs; repeated IDs replace earlier outcomes. Counters distinguish visible uncertainty from actual covered content.
 
 ## Privacy and permissions
 
-The key stays in `chrome.storage.local`, with access restricted to trusted extension contexts. This is local storage, not an encrypted secret vault. Remove the key before sharing the browser profile. The key is never bundled and is never sent to a site other than TypeSafe for inference.
+The key stays in trusted extension `chrome.storage.local`, which is local storage rather than an encrypted vault. Content scripts cannot read it. Video text, limited page context, hints and preference text go directly to TypeSafe. Cache keys retain that text locally; Activity retains IDs and decisions. No entire page, image, transcript or audio is sent. Remove credentials before sharing a browser profile.
 
-Eligible titles, channel names, available descriptions, durations and keywords are sent directly to TypeSafe. Cache keys retain this metadata locally. Counters retain IDs and decisions. No video frames, transcript, audio, thumbnail image or full page HTML is sent. Host access is limited to YouTube and TypeSafe; `storage` and `sidePanel` support persistence and the sidebar.
+Host permissions cover YouTube and TypeSafe only. The sidebar and storage permissions support UI and persistence. Native `video.pause()` stops blocked player media locally, without reading or transmitting audio/video.
 
-## Rehearsal boundaries
+## Rehearsal and limitations
 
-`src/fixtures.ts` and `src/demo.ts` provide fictional cards and explicitly authored judgments. Rehearsal settings/counters are separate from live settings/counters. The localhost preview uses the same UI and detector but cannot save keys or infer live judgments. It never supplies authored decisions on real YouTube.
+The extension-owned demo uses fictional metadata and explicitly authored judgments. Its settings/counters are separate from live use. Authored wildlife rules demonstrate the override mechanics; they are not an AI evaluation. Browser tests use routed DOM fixtures and mocked transport.
 
-## Compatibility boundaries
-
-Known home/search/related renderers are supported. YouTube experiments or renderer changes can evade detection. New pages can render before settings arrive. Metadata can be misleading; the extension does not inspect the video itself or enforce child safety. Live account access, presentation-profile layout compatibility and threshold calibration require the manual checks in `DEMO.md`.
+Live Jev decision quality, venue connectivity and actual YouTube renderer experiments need manual validation. Text metadata can misrepresent the video. Missing information deliberately stays visible. Comments, subtitles, playing-video frames and parental enforcement are outside scope.

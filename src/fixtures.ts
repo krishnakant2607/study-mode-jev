@@ -1,26 +1,29 @@
-import type {Judgment, Video} from './core';
-export type Sample = {video: Video; judgments: Record<string, Judgment>};
-const yes: Judgment = {education: .98, entertainment: .02, relevance: .98, clickbait: .03, sufficient: .99};
-const fun: Judgment = {education: .02, entertainment: .99, relevance: .02, clickbait: .65, sufficient: .98};
-export const samples: Sample[] = [
-  {video: {id: 'python_lesson', title: 'Python functions, explained with real examples', channel: 'The Coding Classroom', description: 'Learn parameters, return values and reusable functions.', duration: '14:32', shorts: false}, judgments: {python: yes, javascript: {...yes, relevance: .08}}},
-  {video: {id: 'snake_video', title: 'Giant python surprises everyone at the zoo', channel: 'Wild Moments', description: 'An unexpected animal encounter.', duration: '8:12', shorts: false}, judgments: {python: fun, javascript: fun}},
-  {video: {id: 'python_project', title: 'Build a Python expense tracker from scratch', channel: 'Build & Learn', description: 'A practical project covering CSV files and functions.', duration: '28:45', shorts: false}, judgments: {python: yes, javascript: {...yes, relevance: .05}}},
-  {video: {id: 'coding_memes', title: 'Python developers react to programming memes', channel: 'After Hours', description: 'Funny reactions and jokes.', duration: '11:06', shorts: false}, judgments: {python: {...fun, relevance: .9}, javascript: fun}},
-  {video: {id: 'javascript_lesson', title: 'JavaScript closures: a visual explanation', channel: 'The Coding Classroom', description: 'Understand lexical scope through worked examples.', duration: '17:20', shorts: false}, judgments: {python: {...yes, relevance: .05}, javascript: yes}},
-  {video: {id: 'physics_lesson', title: 'The physics behind impossible basketball shots', channel: 'Everyday Science', description: 'An entertaining explanation of projectile motion.', duration: '12:40', shorts: false}, judgments: {python: {...yes, relevance: .03}, javascript: {...yes, relevance: .03}}},
-  {video: {id: 'coding_short', title: 'One Python trick in sixty seconds', channel: 'Quick Code', description: 'A short demonstration of list slicing.', duration: '0:59', shorts: true}, judgments: {python: yes, javascript: {...yes, relevance: .02}}},
-  {video: {id: 'unclear_video', title: 'You need to see this…', channel: 'Something New', description: '', duration: '9:15', shorts: false}, judgments: {python: {...yes, education: .5, sufficient: .25, relevance: .5}, javascript: {...yes, education: .5, sufficient: .25, relevance: .5}}},
-  {video: {id: 'riches_video', title: 'Learn Python and get RICH overnight — the secret method', channel: 'Shortcut Academy', description: 'Big promises with no clear lesson.', duration: '10:10', shorts: false}, judgments: {python: {...yes, education: .85, clickbait: .99}, javascript: {...yes, relevance: .02, clickbait: .99}}},
-  {video: {id:'dsa_lesson',title:'DSA: binary search and time complexity explained',channel:'Algorithm Classroom',description:'Learn data structures and algorithms through worked examples.',duration:'21:05',shorts:false},judgments:{python:{...yes,relevance:.02},javascript:{...yes,relevance:.02},dsa:yes}},
-  {video: {id:'dsa_memes',title:'DSA interview memes that are too relatable',channel:'After Hours',description:'Funny interview reactions.',duration:'7:40',shorts:false},judgments:{python:fun,javascript:fun,dsa:{...fun,relevance:.99}}}
-
+import type {Judgment,Settings,Video} from './core';
+export type Sample={video:Video;judgment:Judgment};
+const useful:Judgment={entertainment:.03,preferred:0,excluded:0};
+const fun:Judgment={entertainment:.98,preferred:0,excluded:0};
+const v=(id:string,title:string,description:string,shorts=false,channel='FocusMaxx sample channel'):Video=>({id,title,description,shorts,channel,duration:shorts?'0:45':'14:32'});
+export const samples:Sample[]=[
+ {video:v('python_lesson','GraphRAG in Python: practical knowledge graphs','A worked programming demonstration.'),judgment:useful},
+ {video:v('snake_video','Python snake behaviour: field observations','Wildlife research observations of movement and hunting.',false,'Wildlife Field Notes'),judgment:{...useful,entertainment:.15}},
+ {video:v('pydantic_lesson','Pydantic AI crash course','A framework walkthrough for agent developers.'),judgment:useful},
+ {video:v('coding_memes','Python developers react to programming memes','Funny reactions and jokes.'),judgment:fun},
+ {video:v('javascript_lesson','LangGraph: agent workflows explained','A practical developer tool demonstration.'),judgment:useful},
+ {video:v('music_video','Live music performance: evening session','A full musical performance.',false,'Music Sessions'),judgment:fun},
+ {video:v('coding_short','One Python trick in sixty seconds','A short explanation of list slicing.',true),judgment:useful},
+ {video:v('unclear_video','You need to see this…',''),judgment:{...useful,entertainment:.5}},
+ {video:v('dramatic_lesson','This Python trick will BLOW YOUR MIND','An explained demonstration of generators.'),judgment:useful},
+ {video:v('dsa_lesson','DSA: binary search and time complexity','Worked data structures and algorithms examples.'),judgment:useful},
+ {video:v('dsa_memes','DSA interview memes that are too relatable','Funny interview reactions.',true),judgment:fun},
+ {video:v('wildlife_short','Snake movement captured in the field','Wildlife observation without narration.',true,'Wildlife Field Notes'),judgment:{...useful,entertainment:.92}}
 ];
-export function fixtureJudgment(v: Video, keywords: string[]): Judgment {
-  const sample = samples.find(s => s.video.id === v.id && s.video.title === v.title);
-  if (!sample) throw new Error('This item has no authored rehearsal judgment.');
-  if (!keywords.length) return {...sample.judgments.python, relevance: .98};
-  const choices = keywords.map(k => sample.judgments[k.toLowerCase()]).filter(Boolean);
-  if (choices.length) return {...sample.judgments.python, relevance:Math.max(...choices.map(j=>j.relevance))};
-  return {...sample.judgments.python, relevance:.5, sufficient:.5};
+export function fixtureJudgment(video:Video,settings:Settings):Judgment{
+ const sample=samples.find(s=>s.video.id===video.id&&s.video.title===video.title);if(!sample)throw new Error('No authored rehearsal judgment for this sample.');
+ const j={...sample.judgment};
+ // Explicit authored demonstration rules, never a substitute on real YouTube.
+ if(/wildlife|animal|snake|documentar/i.test(settings.allowPreference)&&/snake|wildlife/i.test(video.title))j.preferred=.98;
+ if(/music/i.test(settings.allowPreference)&&video.id==='music_video')j.preferred=.98;
+ if(/music/i.test(settings.hidePreference)&&video.id==='music_video')j.excluded=.99;
+ if(/memes|pranks/i.test(settings.hidePreference)&&/memes|pranks/i.test(video.title))j.excluded=.99;
+ return j;
 }

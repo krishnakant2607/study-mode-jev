@@ -1,62 +1,44 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {defaults,cleanKeywords,matchesKeywords,cleanSettings,normalizeVideo,cacheKey,requestFor,parseJudgment,decide,newStats,record,summarize} from '../dist/test-modules/core.js';
+import {defaults,cleanSettings,cacheKey,requestFor,parseJudgment,decide,newStats,record,summarize,normalizeVideo} from '../dist/test-modules/core.js';
 import {samples,fixtureJudgment} from '../dist/test-modules/fixtures.js';
-const video=samples[0].video;
-const settings={...defaults,enabled:true,keywords:['Python']};
-const good=samples[0].judgments.python;
-test('Python intent keeps coding and covers snakes and programming memes',()=>{
-  assert.equal(decide(fixtureJudgment(video,['Python']),video,settings,'rehearsal').kind,'allow');
-  for(const index of [1,3])assert.equal(decide(fixtureJudgment(samples[index].video,['Python']),samples[index].video,settings,'rehearsal').reason,'entertainment');
+const v=samples[0].video,s={...defaults,enabled:true,keywords:['python','dsa']};
+const useful={entertainment:.03,preferred:0,excluded:0};
+test('balanced default preserves useful content without exact keyword or lecture evidence',()=>{
+ for(const index of [0,1,2,4,6,7,8,9])assert.equal(decide(samples[index].judgment,samples[index].video,s,'live').kind,'allow');
+ assert.equal(decide({...useful,entertainment:.899},v,s,'live').kind,'allow');
+ assert.equal(decide({...useful,entertainment:.9},v,s,'live').reason,'entertainment');
 });
-test('off-topic education, uncertain evidence, clickbait and Shorts remain covered',()=>{
-  assert.equal(decide(samples[4].judgments.python,samples[4].video,settings,'live').reason,'off_topic');
-  assert.equal(decide({...good,sufficient:.5},video,settings,'live').reason,'uncertain');
-  assert.equal(decide({...good,education:.79},video,settings,'live').reason,'uncertain');
-  assert.equal(decide({...good,clickbait:.95},video,settings,'live').reason,'clickbait');
-  assert.equal(decide(good,{...video,shorts:true},settings,'live').reason,'shorts');
-  assert.equal(decide({...good,clickbait:.95},video,{...settings,hideClickbait:false},'live').kind,'allow');
+test('explicit allow overrides entertainment; explicit hide wins a conflict',()=>{
+ const settings={...s,allowPreference:'Wildlife observations',hidePreference:'Music videos'};
+ assert.equal(decide({entertainment:.98,preferred:.98,excluded:.01},v,settings,'live').reason,'preferred');
+ assert.equal(decide({entertainment:.98,preferred:.98,excluded:.98},v,settings,'live').reason,'excluded');
+ assert.equal(decide({entertainment:.5,preferred:.5,excluded:.899},v,settings,'live').kind,'allow');
+ assert.equal(decide({entertainment:.98,preferred:1,excluded:1},v,s,'live').reason,'entertainment');
 });
-test('general learning preserves educational entertainment without requiring a topic match',()=>{
-  assert.equal(decide(samples[5].judgments.python,samples[5].video,{...settings,keywords:[]},'live').kind,'allow');
+test('Shorts use the same policy and may be explicitly left unfiltered',()=>{
+ assert.equal(decide(useful,{...v,shorts:true},s,'live').kind,'allow');
+ assert.equal(decide({...useful,entertainment:.98},{...v,shorts:true},s,'live').kind,'cover');
+ assert.equal(decide({...useful,entertainment:.98},{...v,shorts:true},{...s,filterShorts:false},'live').kind,'allow');
 });
-test('malformed or incomplete model answers never produce a permissive judgment',()=>{
-  const answers=Object.fromEntries(Object.entries(good).map(([key,noul])=>[key,{type:'noul',noul}]));
-  assert.deepEqual(parseJudgment({answers}),good);
-  for(const bad of [NaN,Infinity,-.1,1.1,'0.98',undefined])assert.throws(()=>parseJudgment({answers:{...answers,education:{type:'noul',noul:bad}}}));
-  assert.throws(()=>parseJudgment({answers:{education:{type:'noul',noul:1}}}));
+test('invalid judgments are rejected; request has no clickbait or mandatory education gate',()=>{
+ const answers=Object.fromEntries(Object.entries(useful).map(([name,noul])=>[name,{type:'noul',noul}]));assert.deepEqual(parseJudgment({answers}),useful);
+ for(const value of [NaN,Infinity,-1,1.1,'0.9',undefined])assert.throws(()=>parseJudgment({answers:{...answers,entertainment:{type:'noul',noul:value}}}));
+ const request=requestFor(v,s);assert.deepEqual(Object.keys(request.questions),['entertainment','preferred','excluded']);assert.deepEqual(request.state.viewer_preferences.interest_hints,['python','dsa']);
+ assert.match(request.state.policy,/never literal gates/);assert.match(request.questions.entertainment.instructions,/untrusted/);
 });
-test('topic, model and evidence invalidate cached judgments; policy toggles reuse judgments',()=>{
-  const key=cacheKey(video,settings);
-  assert.notEqual(key,cacheKey(video,{...settings,keywords:['JavaScript']}));
-  assert.notEqual(key,cacheKey({...video,title:'Different video'},settings));
-  assert.notEqual(key,cacheKey(video,{...settings,model:'jev-1.13.0'}));
-  assert.equal(key,cacheKey(video,{...settings,hideClickbait:false}));
+test('preferences and metadata invalidate cache; reordered interest hints reuse judgments',()=>{
+ assert.notEqual(cacheKey(v,s),cacheKey(v,{...s,allowPreference:'Wildlife'}));assert.notEqual(cacheKey(v,s),cacheKey(v,{...s,hidePreference:'Music'}));assert.equal(cacheKey(v,s),cacheKey(v,{...s,keywords:['DSA','PYTHON']}));
 });
-test('counts replace a repeated or changed decision rather than inflate checked videos',()=>{
-  let stats=newStats();stats=record(stats,'same',{kind:'allow',source:'live'});stats=record(stats,'same',{kind:'cover',reason:'uncertain',source:'cache'});
-  stats=record(stats,'other',{kind:'cover',reason:'entertainment',source:'live'});
-  assert.equal(summarize(stats).checked,2);assert.equal(summarize(stats).covered,2);assert.equal(summarize(stats).uncertain,1);
-  assert.ok(newStats().startedAt>stats.startedAt);
+test('legacy settings migrate without clickbait or blanket Shorts blocking',()=>{
+ const migrated=cleanSettings({enabled:true,topic:'Python',hideClickbait:true,hideShorts:true});assert.deepEqual(migrated.keywords,['Python']);assert.equal(migrated.filterShorts,true);assert.ok(!('hideClickbait'in migrated));assert.ok(!('hideShorts'in migrated));
+ assert.equal(cleanSettings({allowPreference:'x'.repeat(2000)}).allowPreference.length,1500);assert.throws(()=>normalizeVideo({id:'<bad>',title:'bad'}));
 });
-test('bounded metadata and explicit questions retain the intended state',()=>{
-  assert.equal(cleanSettings({keywords:['  Python   programming ']}).keywords[0],'Python programming');
-  assert.equal(cleanSettings(null).enabled,false);
-  assert.throws(()=>normalizeVideo({id:'<script>',title:'bad'}));
-  assert.equal(normalizeVideo({...video,title:'x'.repeat(1000)}).title.length,500);
-  const request=requestFor(video,settings);assert.equal(request.state.learning_keywords[0],'Python');assert.equal(Object.keys(request.questions).length,5);
-  assert.ok(request.questions.education.instructions.includes('untrusted'));
+test('repeated IDs count once and allowed uncertainty is correctly reported',()=>{
+ let stats=record(newStats(),'same',{kind:'cover',reason:'entertainment',source:'live'});stats=record(stats,'same',{kind:'allow',reason:'uncertain',source:'cache'});assert.equal(summarize(stats).checked,1);assert.equal(summarize(stats).covered,0);assert.equal(summarize(stats).uncertain,1);
 });
-
-test('multiple keywords match any full keyword in metadata and still block matching entertainment',()=>{
-  const multiple={...settings,keywords:['python','dsa']};
-  assert.equal(decide(fixtureJudgment(samples[0].video,multiple.keywords),samples[0].video,multiple,'rehearsal').kind,'allow');
-  assert.equal(decide(fixtureJudgment(samples[9].video,multiple.keywords),samples[9].video,multiple,'rehearsal').kind,'allow');
-  assert.equal(decide(fixtureJudgment(samples[10].video,multiple.keywords),samples[10].video,multiple,'rehearsal').reason,'entertainment');
-  assert.equal(matchesKeywords({...video,title:'Pythonic tools',channel:'Learn',description:''},['python']),false);
-  assert.equal(matchesKeywords({...video,title:'C++ beginner guide',channel:'Learn',description:''},['c++']),true);
-  assert.equal(matchesKeywords({...video,title:'Sorting lesson',description:'Worked DSA examples'},multiple.keywords),true);
-  assert.deepEqual(cleanKeywords([' python ','PYTHON','dsa',null,'']),['python','dsa']);
-  assert.deepEqual(cleanSettings({topic:'Python'}).keywords,['Python']);
-  assert.equal(cacheKey(video,multiple),cacheKey(video,{...multiple,keywords:['DSA','PYTHON']}));
+test('authored wildlife preference allows a snake Short; music exclusion stays separate',()=>{
+ const settings={...s,allowPreference:'Wildlife and snake observations',hidePreference:'Music videos'};
+ assert.equal(decide(fixtureJudgment(samples[11].video,settings),samples[11].video,settings,'rehearsal').kind,'allow');
+ assert.equal(decide(fixtureJudgment(samples[5].video,settings),samples[5].video,settings,'rehearsal').reason,'excluded');
 });

@@ -2,11 +2,11 @@
 <rect width="1280" height="320" rx="22" fill="#111112"/>
 <rect x="48" y="45" width="56" height="56" rx="15" fill="#38261d"/>
 <path d="M64 59h9v28h-9zm17 0h9v28h-9z" fill="#ff944d"/>
-<text x="124" y="80" fill="#b8b5b0" font-family="Arial,sans-serif" font-size="18" letter-spacing="3">STUDY MODE</text>
+<text x="124" y="80" fill="#b8b5b0" font-family="Arial,sans-serif" font-size="18" letter-spacing="3">FOCUSMAXX</text>
 <text x="48" y="167" fill="#f3f0ec" font-family="Arial,sans-serif" font-size="58" font-weight="600" letter-spacing="-2">A quieter place to learn.</text>
-<text x="50" y="210" fill="#b8b5b0" font-family="Arial,sans-serif" font-size="21">Your keywords. Jev judgments. Fewer distractions.</text>
+<text x="50" y="210" fill="#b8b5b0" font-family="Arial,sans-serif" font-size="21">Your preferences. Jev judgments. Fewer distractions.</text>
 <rect x="50" y="245" width="150" height="32" rx="6" fill="#252527"/><text x="69" y="266" font-family="Arial,sans-serif" font-size="13" fill="#f3f0ec">Chrome extension</text>
 <rect x="211" y="245" width="125" height="32" rx="6" fill="#252527"/><text x="230" y="266" font-family="Arial,sans-serif" font-size="13" fill="#f3f0ec">TypeScript</text>
 <rect x="347" y="245" width="151" height="32" rx="6" fill="#38261d"/><text x="366" y="266" font-family="Arial,sans-serif" font-size="13" fill="#ffc393">Powered by Jev</text>
-<g transform="translate(977 102)"><rect width="220" height="176" rx="16" fill="#1b1b1d" stroke="#343436"/><text x="20" y="35" fill="#b8b5b0" font-family="Arial,sans-serif" font-size="12">MATCH ANY KEYWORD</text><rect x="20" y="52" width="83" height="34" rx="6" fill="#38261d"/><text x="32" y="74" fill="#ffc393" font-family="Arial,sans-serif" font-size="14">python ×</text><rect x="112" y="52" width="67" height="34" rx="6" fill="#38261d"/><text x="123" y="74" fill="#ffc393" font-family="Arial,sans-serif" font-size="14">dsa ×</text><path d="M20 112h179" stroke="#343436"/><text x="20" y="139" fill="#f3f0ec" font-family="Arial,sans-serif" font-size="14">Keep learning.</text><text x="20" y="159" fill="#b8b5b0" font-family="Arial,sans-serif" font-size="12">Cover entertainment.</text></g>
+<g transform="translate(977 102)"><rect width="220" height="176" rx="16" fill="#1b1b1d" stroke="#343436"/><text x="20" y="35" fill="#b8b5b0" font-family="Arial,sans-serif" font-size="12">YOUR PREFERENCES</text><rect x="20" y="52" width="83" height="34" rx="6" fill="#38261d"/><text x="32" y="74" fill="#ffc393" font-family="Arial,sans-serif" font-size="14">Wildlife</text><rect x="112" y="52" width="67" height="34" rx="6" fill="#38261d"/><text x="123" y="74" fill="#ffc393" font-family="Arial,sans-serif" font-size="14">Focus</text><path d="M20 112h179" stroke="#343436"/><text x="20" y="139" fill="#f3f0ec" font-family="Arial,sans-serif" font-size="14">Keep learning.</text><text x="20" y="159" fill="#b8b5b0" font-family="Arial,sans-serif" font-size="12">Cover entertainment.</text></g>
 </svg>

@@ -1,4 +1,4 @@
-import {cacheKey, matchesKeywords, cleanSettings, decide, defaults, newStats, normalizeVideo, parseJudgment, record, requestFor, type Judgment, type PublicState, type Settings, type Stats, type Video, type Decision} from './core';
+import {RUBRIC_VERSION, cacheKey, cleanSettings, decide, defaults, newStats, normalizeVideo, parseJudgment, record, requestFor, type Judgment, type PublicState, type Settings, type Stats, type Video, type Decision} from './core';
 import {fixtureJudgment} from './fixtures';
 
 type CacheEntry = {judgment: Judgment; at: number};
@@ -8,17 +8,17 @@ let credentialRevision = 0;
 let active = 0;
 const waiters: (() => void)[] = [];
 let writes = Promise.resolve();
-const connectionDefault = {ok: false, message: 'Connect your Jev key to begin.', at: 0};
+const connectionDefault = {ok: false, message: 'Connect Jev. Videos stay visible until evaluated.', at: 0};
 const ready = (async () => {
   await chrome.storage.local.setAccessLevel({accessLevel: 'TRUSTED_CONTEXTS'});
-  const current = await chrome.storage.local.get(['settings', 'rehearsalSettings', 'stats', 'rehearsal', 'connection', 'judgmentCache']);
+  const current = await chrome.storage.local.get(['settings', 'rehearsalSettings', 'stats', 'rehearsal', 'connection', 'judgmentCache','rubricVersion']);
   if (current.judgmentCache && typeof current.judgmentCache === 'object') {
     for (const [key, value] of Object.entries(current.judgmentCache).slice(-1000)) {
       const entry = value as CacheEntry;
-      if (entry && typeof entry.at === 'number' && Date.now()-entry.at < 86400000 && Object.values(entry.judgment || {}).length === 5 && Object.values(entry.judgment).every(x => typeof x === 'number' && x >= 0 && x <= 1)) cache.set(key, entry);
+      if (entry && typeof entry.at === 'number' && Date.now()-entry.at < 86400000 && key.includes(RUBRIC_VERSION) && Object.values(entry.judgment || {}).length === 3 && Object.values(entry.judgment).every(x => typeof x === 'number' && x >= 0 && x <= 1)) cache.set(key, entry);
     }
   }
-  await chrome.storage.local.set({settings: cleanSettings(current.settings || defaults), rehearsalSettings: cleanSettings(current.rehearsalSettings || {...defaults, enabled:true, keywords:['python']}), stats: current.stats || newStats(), rehearsal: current.rehearsal || newStats(), connection: current.connection || connectionDefault});
+  await chrome.storage.local.set({settings: cleanSettings(current.settings || defaults), rehearsalSettings: cleanSettings(current.rehearsalSettings || {...defaults, enabled:true, keywords:['python']}), rubricVersion:RUBRIC_VERSION, stats:current.rubricVersion===RUBRIC_VERSION?current.stats||newStats():newStats(),rehearsal:current.rubricVersion===RUBRIC_VERSION?current.rehearsal||newStats():newStats(), connection: current.connection || connectionDefault});
 })();
 
 async function snapshot(): Promise<PublicState> {
@@ -56,7 +56,7 @@ async function callJev(video: Video, settings: Settings, key: string, transport:
         });
       } catch {
         if (attempt === 0) continue;
-        throw new Error('Jev could not be reached. Check your network; videos remain covered.');
+        throw new Error('Jev could not be reached. Check your network; videos stay visible.');
       }
       if (!response.ok) {
         if (attempt === 0 && [429, 500, 502, 503, 504, 529].includes(response.status)) {
@@ -64,10 +64,10 @@ async function callJev(video: Video, settings: Settings, key: string, transport:
         }
         if (response.status === 401 || response.status === 403) throw new Error('Your Jev key was rejected. Update it in Settings.');
         if (response.status === 429) throw new Error('Jev is rate limited. Pause briefly, then retry.');
-        throw new Error(`Jev returned HTTP ${response.status}. Videos remain covered.`);
+        throw new Error(`Jev returned HTTP ${response.status}. Videos stay visible.`);
       }
       let raw: unknown;
-      try {raw = await response.json();} catch {throw new Error('Jev returned an unreadable response. Videos remain covered.');}
+      try {raw = await response.json();} catch {throw new Error('Jev returned an unreadable response. Videos stay visible.');}
       return {judgment: parseJudgment(raw), latencyMs: Date.now() - started};
     }
     throw new Error('Jev did not return a decision.');
@@ -81,16 +81,15 @@ async function evaluate(video: Video, rehearsal: boolean): Promise<Decision> {
   const session = rehearsal ? state.rehearsal.startedAt : state.stats.startedAt;
   if (!settings.enabled && !rehearsal) return {kind: 'allow', source: 'local'};
   let decision: Decision;
-  if (settings.hideShorts && video.shorts) decision = {kind: 'cover', reason: 'shorts', source: 'local'};
-  else if (!matchesKeywords(video,settings.keywords)) decision = {kind:'cover',reason:'off_topic',source:'local'};
-  else if (rehearsal) decision = decide(fixtureJudgment(video, settings.keywords), video, settings, 'rehearsal');
+  if (video.shorts && !settings.filterShorts) decision = {kind:'allow',source:'local'};
+  else if (rehearsal) decision = decide(fixtureJudgment(video, settings), video, settings, 'rehearsal');
   else {
     const key = cacheKey(video, settings);
     const existing = cache.get(key);
     if (existing && Date.now() - existing.at < 24 * 60 * 60 * 1000) decision = decide(existing.judgment, video, settings, 'cache');
     else {
       const secret = await chrome.storage.local.get('apiKey');
-      if (!secret.apiKey) decision = {kind: 'cover', reason: 'connection', source: 'local'};
+      if (!secret.apiKey) decision = {kind: 'allow', reason: 'connection', source: 'local'};
       else {
         try {
           const requestKey = `${revision}:${key}`;
@@ -110,7 +109,7 @@ async function evaluate(video: Video, rehearsal: boolean): Promise<Decision> {
           decision = {...decide(result.judgment, video, settings, 'live'), latencyMs: result.latencyMs};
         } catch (error) {
           await serial(async () => {if (revision === credentialRevision) await chrome.storage.local.set({connection: {ok: false, message: error instanceof Error ? error.message : 'Jev is unavailable.', at: Date.now()}});});
-          decision = {kind: 'cover', reason: 'connection', source: 'local'};
+          decision = {kind: 'allow', reason: 'connection', source: 'local'};
         }
       }
     }
@@ -119,7 +118,7 @@ async function evaluate(video: Video, rehearsal: boolean): Promise<Decision> {
   return serial(async () => {
     const latest = await snapshot();
     const now = rehearsal ? latest.rehearsal : latest.stats;
-    if ((!rehearsal && revision !== credentialRevision) || JSON.stringify(rehearsal ? latest.rehearsalSettings : latest.settings) !== JSON.stringify(settings) || now.startedAt !== session) return {kind: 'cover', reason: 'uncertain', source: 'local'} as Decision;
+    if ((!rehearsal && revision !== credentialRevision) || JSON.stringify(rehearsal ? latest.rehearsalSettings : latest.settings) !== JSON.stringify(settings) || now.startedAt !== session) return {kind: 'allow', reason: 'uncertain', source: 'local'} as Decision;
     const field = rehearsal ? 'rehearsal' : 'stats';
     await chrome.storage.local.set({[field]: record(now, video.id, decision)});
     return decision;
@@ -147,7 +146,7 @@ async function handle(message: Record<string, unknown>, sender: chrome.runtime.M
       const before = await snapshot();
       const base = rehearsal ? before.rehearsalSettings : before.settings;
       const settings = cleanSettings((message.settings || {}) as Partial<Settings>, base);
-      const changedSession = JSON.stringify(base.keywords) !== JSON.stringify(settings.keywords) || (!base.enabled && settings.enabled);
+      const changedSession = JSON.stringify(base) !== JSON.stringify(settings);
       await chrome.storage.local.set({[rehearsal ? 'rehearsalSettings' : 'settings']: settings, ...(changedSession ? {[rehearsal ? 'rehearsal' : 'stats']: newStats()} : {})});
     });
     if (!rehearsal) await broadcast();
