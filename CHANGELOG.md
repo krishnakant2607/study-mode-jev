@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.1.1 — Download and install fix
+
+- Include a compiled `chrome-extension` folder in the repository source ZIP.
+- Include `downloads/study-mode-extension.zip` and link directly to it in README.
+- Document both install paths without requiring Node or npm.
+
 ## 0.1.0 — Hackathon build
 
 - Multiple removable keyword chips with Enter-to-add and any-keyword matching.

@@ -8,3 +8,6 @@ artifacts/
 coverage/
 playwright-report/
 test-results/
+
+!downloads/
+!downloads/study-mode-extension.zip

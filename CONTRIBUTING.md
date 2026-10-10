@@ -8,7 +8,7 @@ npm test
 npm run package
 ```
 
-The build goes to `dist`; the packaged extension goes to `artifacts/study-mode-extension.zip`. Neither generated output nor `node_modules` belongs in Git. CI generates a downloadable package for each validated push.
+The build goes to `dist`; the packaged extension goes to `artifacts/study-mode-extension.zip`. `dist` and `node_modules` stay out of Git. The compiled `chrome-extension` folder and `downloads/study-mode-extension.zip` are intentionally committed so GitHub source downloads can be installed directly. Run `npm run package` before committing a code change to keep those outputs current. CI also generates a downloadable package for each validated push.
 
 For isolated browser tests:
 

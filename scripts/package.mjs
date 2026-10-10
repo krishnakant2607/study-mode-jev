@@ -8,4 +8,8 @@ for (const name of ['README.md','DEMO.md','CONTRIBUTING.md','CHANGELOG.md','PROD
 await cp('docs','artifacts/package/study-mode/docs',{recursive:true});
 const r=spawnSync('/usr/bin/zip',['-r','-q','../study-mode-extension.zip','study-mode'],{cwd:'artifacts/package',stdio:'inherit'});
 if(r.status!==0)throw new Error('Could not create extension ZIP.');
-console.log('Package: artifacts/study-mode-extension.zip');
+await rm('chrome-extension',{recursive:true,force:true});
+await cp('dist','chrome-extension',{recursive:true,filter:source=>!source.includes('test-modules')});
+await mkdir('downloads',{recursive:true});
+await cp('artifacts/study-mode-extension.zip','downloads/study-mode-extension.zip');
+console.log('Ready to load: chrome-extension/; install ZIP: downloads/study-mode-extension.zip');
