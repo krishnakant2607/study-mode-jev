@@ -1,0 +1,11 @@
+import {spawnSync} from 'node:child_process';
+import {mkdir,cp,rm} from 'node:fs/promises';
+await rm('artifacts/package',{recursive:true,force:true});
+await rm('artifacts/study-mode-extension.zip',{force:true});
+await mkdir('artifacts/package',{recursive:true});
+await cp('dist','artifacts/package/study-mode',{recursive:true,filter:(source)=>!source.includes('test-modules')});
+for (const name of ['README.md','DEMO.md','CONTRIBUTING.md','CHANGELOG.md','PRODUCT.md','DESIGN.md','TEST_REPORT.md']) await cp(name,`artifacts/package/study-mode/${name}`);
+await cp('docs','artifacts/package/study-mode/docs',{recursive:true});
+const r=spawnSync('/usr/bin/zip',['-r','-q','../study-mode-extension.zip','study-mode'],{cwd:'artifacts/package',stdio:'inherit'});
+if(r.status!==0)throw new Error('Could not create extension ZIP.');
+console.log('Package: artifacts/study-mode-extension.zip');

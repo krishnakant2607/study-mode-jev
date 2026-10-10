@@ -1,0 +1,75 @@
+{
+  "schemaVersion": 2,
+  "generatedAt": "2026-10-10T08:19:43.489533+00:00",
+  "title": "Design System: Study Mode",
+  "extensions": {
+    "colorMeta": {
+      "orange": {
+        "role": "primary",
+        "displayName": "Warm Orange",
+        "canonical": "#ff944d"
+      },
+      "charcoal": {
+        "role": "neutral",
+        "displayName": "Charcoal",
+        "canonical": "#111112"
+      }
+    },
+    "typographyMeta": {
+      "metric": {
+        "displayName": "Session figures",
+        "purpose": "Tabular numerals for factual session counts."
+      }
+    },
+    "shadows": [],
+    "motion": [
+      {
+        "name": "switch-transition",
+        "value": "180ms cubic-bezier(.16,1,.3,1)",
+        "purpose": "Switch state transitions; disabled under reduced motion."
+      }
+    ],
+    "breakpoints": [
+      {
+        "name": "compact-panel",
+        "value": "350px"
+      }
+    ]
+  },
+  "components": [
+    {
+      "name": "Primary Button",
+      "kind": "button",
+      "refersTo": "button-primary",
+      "description": "The main action for starting a learning session.",
+      "html": "<button class=\"primary\">Open YouTube</button>",
+      "css": ".primary{background:#ff944d;color:#26190f;border:0;border-radius:8px;padding:10px 13px;font:550 11px system-ui;min-height:35px}.primary:hover{background:#ffad76}.primary:focus-visible{outline:2px solid #ff944d;outline-offset:3px}"
+    },
+    {
+      "name": "Keyword Chip",
+      "kind": "chip",
+      "description": "One saved keyword with an accessible remove action; multiple chips match any keyword.",
+      "html": "<span class=\"keyword-chip\"><span>python</span><button aria-label=\"Remove keyword python\">\u00d7</button></span>",
+      "css": ".keyword-chip{display:inline-flex;align-items:center;gap:8px;padding:5px 5px 5px 10px;background:#38261d;color:#ffc393;border:1px solid #60432d;border-radius:6px;font:11px system-ui}.keyword-chip button{border:0;background:transparent;color:inherit;font-size:16px;width:24px;height:24px;border-radius:4px}"
+    }
+  ],
+  "narrative": {
+    "northStar": "User-supplied charcoal and orange dashboard references",
+    "overview": "Premium compact utility. Learning controls lead; truthful analytics support them. Tonal depth, clear focus and explicit rehearsal states define the panel.",
+    "keyCharacteristics": [
+      "Charcoal tonal surfaces",
+      "Warm orange actions",
+      "Factual tabular metrics",
+      "Visible recovery states"
+    ],
+    "rules": [],
+    "dos": [
+      "Keep learning controls before analytics.",
+      "Label rehearsal and live status."
+    ],
+    "donts": [
+      "Invent time-saved claims.",
+      "Reveal covered titles in Activity."
+    ]
+  }
+}

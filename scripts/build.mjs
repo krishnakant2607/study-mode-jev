@@ -1,0 +1,12 @@
+import {build} from 'esbuild';
+import {mkdir,cp,readFile,writeFile} from 'node:fs/promises';
+await mkdir('dist',{recursive:true});
+await cp('public','dist',{recursive:true});
+await cp('manifest.json','dist/manifest.json');
+const panel=await readFile('public/panel.html','utf8');
+await writeFile('dist/sidebar.html',panel.replace('class="popup"','class="sidebar"'));
+await writeFile('dist/settings.html',panel.replace('class="popup"','class="sidebar"'));
+await build({entryPoints:['src/background.ts','src/panel.ts','src/demo.ts'],outdir:'dist',bundle:true,format:'esm',target:'chrome116',minify:false,legalComments:'none'});
+await build({entryPoints:['src/content.ts'],outfile:'dist/content.js',bundle:true,format:'iife',target:'chrome116',minify:false,legalComments:'none'});
+await build({entryPoints:['src/core.ts','src/fixtures.ts','src/detector.ts'],outdir:'dist/test-modules',bundle:true,format:'esm',platform:'node',target:'node20'});
+console.log('Built Chrome extension in dist/.');

@@ -1,0 +1,7 @@
+.study-covered { position: relative !important; isolation: isolate !important; min-height: 130px !important; }
+.study-covered > :not(.study-cover) { visibility: hidden !important; pointer-events: none !important; user-select: none !important; }
+.study-cover { position: absolute !important; inset: 0 !important; z-index: 20 !important; display: flex !important; flex-direction: column !important; align-items: center !important; justify-content: center !important; gap: 9px !important; background: #181819 !important; border: 1px solid #343436 !important; border-radius: 12px !important; box-sizing: border-box !important; padding: 18px !important; font-family: system-ui,sans-serif !important; color: #d6d2cd !important; text-align: center !important; cursor: default !important; }
+.study-cover strong {font-size: 13px !important; font-weight: 500 !important; line-height: 1.4 !important; color:#e5e1da !important;}
+.study-cover-sub { font-size: 11px !important; line-height: 1.5 !important; color:#b7b2ab !important; }
+.study-cover-mark { color: #ff944d !important; display: block !important; }
+@media (prefers-reduced-motion: no-preference) {.study-cover {transition: background 160ms ease-out !important;}}
