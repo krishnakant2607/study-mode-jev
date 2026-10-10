@@ -8,7 +8,7 @@
 
 `core.ts` supplies one entertainment question plus optional nonblank preference questions: primarily entertainment, explicit positive preference match, explicit negative preference match. Keywords are optional semantic hints; missing keywords never reject a video. There is no clickbait question or requirement for lecture-style teaching. Channel context supports a decision without granting a blanket exemption.
 
-The deterministic policy is: explicit hide match ≥0.90 covers; explicit allow match ≥0.90 keeps; otherwise entertainment ≥0.90 covers; all other judgments keep. Empty preference fields are omitted from the request and cannot match. Classification describes primary purpose independently of code-level display thresholds. Invalid replies, missing credentials and transport failures keep content visible. Thresholds are initial policy and need live calibration.
+The deterministic policy is: explicit hide match ≥0.90 covers; explicit allow match ≥0.90 keeps; otherwise an explicit entertainment title covers; otherwise entertainment ≥0.90 covers; all other judgments keep. Empty preference fields are omitted from the request and cannot match. Classification describes primary purpose independently of code-level display thresholds. Informative title markers bypass the category rule. Blank preferences allow local category decisions without a network request. Invalid replies, missing credentials and transport failures keep other content visible. Thresholds are initial policy and need live calibration.
 
 ## Execution
 

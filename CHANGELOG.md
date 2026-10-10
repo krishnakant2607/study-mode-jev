@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.2.2 — Explicit entertainment categories
+
+- Cover clearly labelled songs, music, audio releases, movies, trailers, pranks and performances directly when preferences are blank.
+- Informative title markers bypass the category rule and continue to Jev.
+- Explicit allow/hide preferences are resolved before category rules; AI-only decisions retain the 0.90 threshold.
+- Reset cached judgments for the new rubric. Twenty logic/worker tests and thirteen mocked browser checks passed.
+
 ## 0.2.1 — Filtering diagnostics and live settings fix
 
 - Blank preferences omit their Jev questions entirely.

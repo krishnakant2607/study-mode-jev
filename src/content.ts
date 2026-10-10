@@ -1,4 +1,4 @@
-import {reasonLabel, type Stats, type Decision, type PublicState, type Settings, type Video} from './core';
+import {clearlyEntertainment, reasonLabel, type Stats, type Decision, type PublicState, type Settings, type Video} from './core';
 import {extractCard, findCards} from './detector';
 import {installed, rpc} from './client';
 type Tracked = {video: Video; signature: string; epoch: number; queued: boolean; overlay?: HTMLElement};
@@ -88,7 +88,7 @@ function scan() {
       const row = {video, signature, epoch, queued:false}; tracked.set(card,row);
       const known = decisions.get(signature);
       if (known) {apply(card,known); row.queued = true;}
-      else {reveal(card);observer.observe(card);enqueue(card);}
+      else {if(settings&&!settings.allowPreference&&!settings.hidePreference&&!(video.shorts&&!settings.filterShorts)&&clearlyEntertainment(video))apply(card,{kind:'cover',reason:'entertainment',source:'local'});else reveal(card);observer.observe(card);enqueue(card);}
     }
   } finally {scanning = false;}
 }

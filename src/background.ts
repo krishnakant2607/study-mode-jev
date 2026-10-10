@@ -1,4 +1,4 @@
-import {RUBRIC_VERSION, cacheKey, cleanSettings, decide, defaults, newStats, normalizeVideo, parseJudgment, record, requestFor, type Judgment, type PublicState, type Settings, type Stats, type Video, type Decision} from './core';
+import {RUBRIC_VERSION, clearlyEntertainment, cacheKey, cleanSettings, decide, defaults, newStats, normalizeVideo, parseJudgment, record, requestFor, type Judgment, type PublicState, type Settings, type Stats, type Video, type Decision} from './core';
 import {fixtureJudgment} from './fixtures';
 
 type CacheEntry = {judgment: Judgment; at: number};
@@ -82,6 +82,7 @@ async function evaluate(video: Video, rehearsal: boolean): Promise<Decision> {
   if (!settings.enabled && !rehearsal) return {kind: 'allow', source: 'local'};
   let decision: Decision;
   if (video.shorts && !settings.filterShorts) decision = {kind:'allow',source:'local'};
+  else if (!settings.allowPreference && !settings.hidePreference && clearlyEntertainment(video)) decision={kind:'cover',reason:'entertainment',source:'local'};
   else if (rehearsal) decision = decide(fixtureJudgment(video, settings), video, settings, 'rehearsal');
   else {
     const key = cacheKey(video, settings);
@@ -147,7 +148,7 @@ async function handle(message: Record<string, unknown>, sender: chrome.runtime.M
       const health=await chrome.tabs.sendMessage(tabs[0].id,{type:'FOCUS_PAGE_STATUS'});
       if(!health)throw new Error('Missing content script.');
       const state=await snapshot();
-      const message=!health.enabled?'FocusMaxx is off on this page. Enable it in Focus.':!state.hasKey?'No Jev key is saved in this installation. Add it in Settings and test the connection.':!health.readable?`Detected ${health.recognized} cards, but no readable video metadata. This YouTube layout needs detector support.`:`${health.readable} readable cards; ${health.evaluated} evaluated; ${health.covered} covered; ${health.unavailable} unavailable; ${health.pending} pending. Cover threshold: 90%.`;
+      const message=!health.enabled?'FocusMaxx is off on this page. Enable it in Focus.':!state.hasKey?'No Jev key is saved in this installation. Add it in Settings and test the connection.':!health.readable?`Detected ${health.recognized} cards, but no readable video metadata. This YouTube layout needs detector support.`:`${health.readable} readable cards; ${health.evaluated} evaluated; ${health.covered} covered; ${health.unavailable} unavailable; ${health.pending} pending. AI threshold: 90%. Explicit entertainment categories also covered.`;
       return {...health,message};
     }catch{return {message:'Reload this YouTube tab after updating the extension, then check again.'};}
   }

@@ -1,6 +1,6 @@
-# FocusMaxx v0.2.1 verification
+# FocusMaxx v0.2.2 verification
 
-Type checking and 18 logic/worker tests passed. Twelve packaged Chromium integration checks passed with no page errors.
+Type checking and 20 logic/worker tests passed. Thirteen packaged Chromium integration checks passed with no page errors.
 
 ## Logic and worker coverage
 
@@ -22,3 +22,5 @@ Balanced 0.90 boundary; useful videos without literal keywords; ambiguous judgme
 All browser data and model responses were authored/mocked. Real YouTube layouts and live Jev decision quality remain unverified. Screenshots are under `docs/assets`; the live readiness plan is in `DEMO.md`.
 
 Additional regressions: blank preferences omit questions and require no missing preference answers; changing Activity source does not redirect live settings; live-page diagnostics report readable cards and raw scores while excluding covered titles and keys. Primary-purpose classification changed; its live accuracy still requires validation.
+
+Category regressions: explicit song/audio and full-movie titles are covered even when mocked AI scores are low; music theory remains visible; an explicit music allowance overrides the category rule; blank preferences permit local song decisions without an API call. These checks do not verify live YouTube layouts or real model accuracy.

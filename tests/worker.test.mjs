@@ -71,3 +71,9 @@ test('nonmatching keywords do not bypass Jev or cover useful content',async()=>{
   const before=calls;const result=await send('CLASSIFY',{video:{...video,id:'unrelated_lesson',title:'Pydantic AI framework course'}},youtube);
   assert.equal(result.data.kind,'allow');assert.equal(result.data.source,'live');assert.equal(calls,before+1);
 });
+
+test('clearly labelled songs are covered locally when preferences are blank',async()=>{
+ await send('SAVE_SETTINGS',{settings:{enabled:true,allowPreference:'',hidePreference:''}});const start=calls;
+ const result=await send('CLASSIFY',{video:{...video,id:'clear_song',title:'Artist - My song (Official Audio)'}},youtube);
+ assert.equal(result.data.kind,'cover');assert.equal(result.data.source,'local');assert.equal(calls,start);
+});

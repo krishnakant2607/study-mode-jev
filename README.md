@@ -18,7 +18,7 @@ Personalize it with two plain-language fields: **what you want to see** and **wh
 
 | Feature | Behavior |
 | --- | --- |
-| Balanced default | Entertainment is covered only at a judgment ≥0.90; uncertainty stays visible. |
+| Balanced default | Clearly labelled entertainment categories are covered directly; other entertainment requires an AI judgment ≥0.90. |
 | Positive/negative preferences | Explicit exclusions win, then explicit allowances override the generic entertainment rule. |
 | Optional keyword hints | Add chips with Enter. Missing keyword matches never block content. |
 | Individual Shorts | Recognized modern/legacy cards and an active vertical viewer use the same policy. Blocked player media pauses. |
@@ -75,14 +75,16 @@ flowchart LR
     C -->|Yes| D[Cover]
     C -->|No| E{Explicit allow match ≥0.90?}
     E -->|Yes| F[Keep visible]
-    E -->|No| G{Entertainment ≥0.90?}
+    E -->|No| H{Explicit entertainment title?}
+    H -->|Yes| D
+    H -->|No| G{Entertainment ≥0.90?}
     G -->|Yes| D
     G -->|No or unavailable| F
 ```
 
 ## If videos are not being covered
 
-Enable FocusMaxx on a real YouTube tab, then use **Check this YouTube page** in the popup or sidebar. It reports detected/readable cards, evaluated decisions, unavailable calls and the highest entertainment scores among still-visible videos. It never exposes credentials or covered titles. Scores below 90% stay visible under the agreed policy. **Activity source** changes only the statistics you view; preferences always belong to the current live or explicitly labelled demo panel.
+Enable FocusMaxx on a real YouTube tab, then use **Check this YouTube page** in the popup or sidebar. It reports detected/readable cards, evaluated decisions, unavailable calls and the highest entertainment scores among still-visible videos. It never exposes credentials or covered titles. Scores below 90% stay visible unless the title matches an explicit entertainment category. Informative title markers bypass that local rule; Jev still evaluates them. With blank preferences, explicit category rules work without an API call. **Activity source** changes only the statistics you view; preferences always belong to the current live or explicitly labelled demo panel.
 
 ## Verification and demo readiness
 

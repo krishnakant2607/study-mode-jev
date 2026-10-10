@@ -23,10 +23,17 @@ function normalizeVideo(raw) {
   const text = (x, n) => typeof x === "string" ? x.replace(/\s+/g, " ").trim().slice(0, n) : "";
   return { id: v2.id, title: text(v2.title, 500), channel: text(v2.channel, 200), description: text(v2.description, 1e3), duration: text(v2.duration, 30), shorts: v2.shorts === true, pageContext: text(v2.pageContext, 300) };
 }
+function clearlyEntertainment(v2) {
+  const title = v2.title.normalize("NFKC");
+  if (/\b(tutorial|lesson|course|explained|explanation|analysis|analyzing|analysing|documentary|research|science|history|review|breakdown|education|educational|learn|learning|technique|theory|how to|why|what is|understanding|guide|facts)\b|कैसे|सीखें|समझें|विश्लेषण|इतिहास/i.test(title)) return false;
+  if (/\b(songs?|music|remix|mashup|karaoke|piano cover|guitar cover|acoustic cover|bhajan|qawwali|ghazal|official audio|lyric(?:s)?(?: video)?|full movie|full film|movie trailer|film trailer|movie scene|film scene|movie clip|film clip|pranks?|prank compilation|comedy sketch|meme compilation|memes|live concert|concert performance|music performance|dj mix|music mix|relaxing music|lofi (?:mix|music|beats)|slowed(?: and| \+)? reverb|sped up)\b|गाना|गीत|पूर्ण फिल्म/i.test(title)) return true;
+  return /\bofficial (?:music )?video\b/i.test(title) && /vevo|music|records|t.series/i.test(v2.channel);
+}
 function decide(j, v2, s, source) {
   if (v2.shorts && !s.filterShorts) return { kind: "allow", source: "local" };
   if (s.hidePreference && j.excluded >= BLOCK_THRESHOLD) return { kind: "cover", reason: "excluded", source, judgment: j };
   if (s.allowPreference && j.preferred >= BLOCK_THRESHOLD) return { kind: "allow", reason: "preferred", source, judgment: j };
+  if (clearlyEntertainment(v2)) return { kind: "cover", reason: "entertainment", source: "local", judgment: j };
   if (j.entertainment >= BLOCK_THRESHOLD) return { kind: "cover", reason: "entertainment", source, judgment: j };
   return { kind: "allow", reason: j.entertainment > 0.1 ? "uncertain" : void 0, source, judgment: j };
 }

@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {defaults,cleanSettings,cacheKey,requestFor,parseJudgment,decide,newStats,record,summarize,normalizeVideo} from '../dist/test-modules/core.js';
+import {clearlyEntertainment,defaults,cleanSettings,cacheKey,requestFor,parseJudgment,decide,newStats,record,summarize,normalizeVideo} from '../dist/test-modules/core.js';
 import {samples,fixtureJudgment} from '../dist/test-modules/fixtures.js';
 const v=samples[0].video,s={...defaults,enabled:true,keywords:['python','dsa']};
 const useful={entertainment:.03,preferred:0,excluded:0};
@@ -49,4 +49,12 @@ test('blank preference fields omit questions entirely; nonblank fields require v
  assert.deepEqual(Object.keys(requestFor(v,custom).questions),['entertainment','excluded']);
  assert.throws(()=>parseJudgment({answers:{entertainment:{type:'noul',noul:.99}}},custom));
  assert.deepEqual(parseJudgment({answers:{entertainment:{type:'noul',noul:.99}}}),{entertainment:.99,preferred:0,excluded:0});
+});
+
+test('explicit entertainment categories cover songs, movies and pranks without inventing AI scores',()=>{
+ for(const title of ['My favourite song','Artist - Track (Official Music Video)','Summer Mix (Official Audio)','Full Movie HD','New movie trailer','Funny prank compilation','Live concert performance','Late night relaxing music']){
+  const video={...v,title};assert.equal(clearlyEntertainment(video),true);assert.equal(decide({...useful,entertainment:.5},video,s,'live').source,'local');assert.equal(decide({...useful,entertainment:.5},video,s,'live').kind,'cover');
+ }
+ for(const title of ['Music theory explained','Learn this song on guitar','Film analysis: visual storytelling','Movie history documentary','How to compose music','Why songs make us sad','Python functions tutorial'])assert.equal(clearlyEntertainment({...v,title}),false);
+ assert.equal(decide({entertainment:.5,preferred:.98,excluded:0},{...v,title:'My favourite song'},{...s,allowPreference:'Music performances'},'live').kind,'allow');
 });
