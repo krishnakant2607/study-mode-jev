@@ -38,7 +38,7 @@ Personalize it with two plain-language fields: **what you want to see** and **wh
 4. Open **Settings**, enter your TypeSafe API key privately, choose **Save key**, then **Test connection**.
 5. Enable FocusMaxx in **Focus**. In **Preferences**, optionally enter what to allow/hide and click **Save preferences**. Reload YouTube.
 
-No preferences are required: Balanced mode works by default. Optional hints add context and can seed the **Open YouTube** search. They never restrict the current page to literal matches.
+No preferences are required: Balanced mode works by default, and blank preference fields send no preference questions. Optional hints add context and can seed the **Open YouTube** search. They never restrict the current page to literal matches.
 
 ### If you used Code → Download ZIP
 
@@ -80,6 +80,10 @@ flowchart LR
     G -->|No or unavailable| F
 ```
 
+## If videos are not being covered
+
+Enable FocusMaxx on a real YouTube tab, then use **Check this YouTube page** in the popup or sidebar. It reports detected/readable cards, evaluated decisions, unavailable calls and the highest entertainment scores among still-visible videos. It never exposes credentials or covered titles. Scores below 90% stay visible under the agreed policy. **Activity source** changes only the statistics you view; preferences always belong to the current live or explicitly labelled demo panel.
+
 ## Verification and demo readiness
 
 ```sh
@@ -88,7 +92,7 @@ npm test
 npm run package
 ```
 
-**17 automated tests and 10 isolated Chromium checks passed** with authored fixtures and a mocked API transport. CI runs type checking, logic/worker tests and packaging; its artifact contains the extension ZIP. Browser tests can be run separately using [CONTRIBUTING.md](CONTRIBUTING.md).
+**18 automated tests and 12 isolated Chromium checks passed** with authored fixtures and a mocked API transport. CI runs type checking, logic/worker tests and packaging; its artifact contains the extension ZIP. Browser tests can be run separately using [CONTRIBUTING.md](CONTRIBUTING.md).
 
 **Live Jev access, real YouTube layout coverage and decision quality still need testing with your key and Chrome profile.** Metadata can misrepresent a video. The extension covers recognized desktop recommendation cards; it does not inspect playing-video frames, subtitles or comments, and does not enforce parental controls. See the [test report](TEST_REPORT.md) and [demo runbook](DEMO.md) before presenting.
 

@@ -4,8 +4,9 @@ const $ = <T extends HTMLElement = HTMLElement>(id:string) => document.getElemen
 let state: PublicState;
 let windowId: number | undefined;
 if (installed) chrome.windows.getCurrent().then(window => {windowId=window.id;}).catch(()=>undefined);
-let scope: 'live'|'rehearsal' = installed && !new URLSearchParams(location.search).has('demo') ? 'live' : 'rehearsal';
+const scope: 'live'|'rehearsal' = installed && !new URLSearchParams(location.search).has('demo') ? 'live' : 'rehearsal';
 let currentTab = 'focus';
+let activityScope: 'live'|'rehearsal' = scope;
 let busy = false;
 let preferenceDirty = false;
 let noticeTimer: ReturnType<typeof setTimeout>;
@@ -40,28 +41,30 @@ function render() {
   $('key-status').textContent=state.hasKey ? 'A key is saved. Its value is never shown here.' : 'No key connected. Enter it here, never in chat.';
   ($('remove-key') as HTMLButtonElement).disabled=!state.hasKey || busy;
   $('scope-label').textContent=scope==='live'?'Live':'Rehearsal';$('scope-label').classList.toggle('rehearsal',scope==='rehearsal');
-  ($('metric-scope') as HTMLSelectElement).value=scope;
+  ($('metric-scope') as HTMLSelectElement).value=activityScope;
   const stats=scope==='live'?state.stats:state.rehearsal;const summary=summarize(stats);
   for(const name of ['checked','allowed','covered'] as const)$(name).textContent=String(summary[name]);
   $('uncertain').textContent=`${summary.uncertain} uncertain · kept visible`;
   const meter=$('distribution');meter.replaceChildren();
   for(let i=0;i<40;i++) {const tick=document.createElement('span');if(summary.checked){const point=(i+.5)/40*summary.checked;tick.className=point<summary.allowed?'learning':'covered';}meter.append(tick);}
   meter.setAttribute('aria-label',`${summary.allowed} visible videos; ${summary.covered} covered, including ${summary.uncertain} uncertain`);
-  $('activity-count').textContent=String(summary.checked);
-  $('activity-empty').hidden=summary.checked>0;
-  $('activity-empty').textContent=scope==='rehearsal'?'Open the rehearsal page to try the filter on authored sample videos.':'Open YouTube with Study Mode enabled to see your first results.';
+  const activityStats=activityScope==='live'?state.stats:state.rehearsal;
+  const activitySummary=summarize(activityStats);
+  $('activity-count').textContent=String(activitySummary.checked);
+  $('activity-empty').hidden=activitySummary.checked>0;
+  $('activity-empty').textContent=activityScope==='rehearsal'?'Open the rehearsal page to try the filter on authored sample videos.':'Open YouTube with Study Mode enabled to see your first results.';
   const reasons=$('reason-list');reasons.replaceChildren();
   for(const reason of ['entertainment','excluded','preferred','uncertain','connection'] as Reason[]) {
     const row=document.createElement('div');row.className='reason-row';
     const name=document.createElement('span');name.textContent=reasonLabel[reason];
-    const track=document.createElement('div');track.className='reason-track';const fill=document.createElement('span');fill.style.width=`${summary.checked?summary.reasons[reason]/summary.checked*100:0}%`;track.append(fill);
-    const count=document.createElement('strong');count.textContent=String(summary.reasons[reason]);row.append(name,track,count);reasons.append(row);
+    const track=document.createElement('div');track.className='reason-track';const fill=document.createElement('span');fill.style.width=`${activitySummary.checked?activitySummary.reasons[reason]/activitySummary.checked*100:0}%`;track.append(fill);
+    const count=document.createElement('strong');count.textContent=String(activitySummary.reasons[reason]);row.append(name,track,count);reasons.append(row);
   }
-  const mins=Math.max(0,Math.floor((Date.now()-stats.startedAt)/60000));$('activity-time').textContent=mins?`Session started ${mins} min ago`:'Session just started';
+  const mins=Math.max(0,Math.floor((Date.now()-activityStats.startedAt)/60000));$('activity-time').textContent=mins?`Session started ${mins} min ago`:'Session just started';
   const label=$('connection-label');
   label.textContent=scope==='rehearsal'?'Rehearsal · authored decisions':!state.hasKey?'Connect Jev in Settings':state.connection.ok?'Jev connected':state.connection.message;
   $('connection-dot').classList.toggle('connected',scope==='live' && installed && state.connection.ok);
-  $('connection-action').textContent=scope==='rehearsal'?'Live':installed&&state.hasKey?'Retry':'Connect';
+  $('connection-action').textContent=scope==='rehearsal'?'Settings':installed&&state.hasKey?'Retry':'Connect';
 }
 async function refresh() {state=await rpc('GET_STATE');render();}
 async function action(fn:()=>Promise<void>,button?:HTMLButtonElement) {
@@ -88,12 +91,18 @@ $('key-form').addEventListener('submit',e=>{e.preventDefault();action(async()=>{
 $('test-connection').addEventListener('click',()=>action(async()=>{notice('Checking a live Jev decision…');state=await rpc('TEST_CONNECTION');notice('Live Jev connection verified.',true);},$<HTMLButtonElement>('test-connection')));
 $('remove-key').addEventListener('click',()=>action(async()=>{state=await rpc('SAVE_KEY',{key:''});notice('Saved key removed.',true);}));
 $('save-model').addEventListener('click',()=>action(async()=>{const model=($('model') as HTMLInputElement).value;if(!/^jev-[a-zA-Z0-9.-]{1,40}$/.test(model))throw new Error('Use a Jev model name such as jev-latest.');await save({model});notice('Model saved.',true);}));
-$('metric-scope').addEventListener('change',()=>{preferenceDirty=false;scope=($('metric-scope') as HTMLSelectElement).value as typeof scope;render();});
+$('metric-scope').addEventListener('change',()=>{activityScope=($('metric-scope') as HTMLSelectElement).value as typeof activityScope;render();});
 $('activity-link').addEventListener('click',()=>tab('activity'));
-$('reset-session').addEventListener('click',()=>action(async()=>{state=await rpc('RESET_SESSION',{scope});notice('A fresh session is ready.',true);}));
-for(const id of ['demo','settings-demo'])$(id).addEventListener('click',()=>action(async()=>{await rpc('OPEN_DEMO');scope='rehearsal';preferenceDirty=false;render();}));
-$('open-youtube').addEventListener('click',()=>action(async()=>{scope='live';preferenceDirty=false;render();await rpc('OPEN_YOUTUBE');}));
+$('reset-session').addEventListener('click',()=>action(async()=>{state=await rpc('RESET_SESSION',{scope:activityScope});notice('A fresh session is ready.',true);}));
+for(const id of ['demo','settings-demo'])$(id).addEventListener('click',()=>action(async()=>{await rpc('OPEN_DEMO');}));
+$('open-youtube').addEventListener('click',()=>action(async()=>{await rpc('OPEN_YOUTUBE');}));
 $('sidebar').addEventListener('click',()=>action(async()=>{if(installed && windowId !== undefined) await chrome.sidePanel.open({windowId});else throw new Error('Use this control from the installed Chrome extension.');}));
-$('connection-action').addEventListener('click',()=>{if(scope==='rehearsal'){if(installed){scope='live';preferenceDirty=false;render();}else tab('settings');return;}if(installed&&state.hasKey)action(async()=>{await rpc('RETRY');notice('Retry requested. Check Settings if the connection still fails.',true);});else tab('settings');});
+$('connection-action').addEventListener('click',()=>{if(scope==='rehearsal'){tab('settings');return;}if(installed&&state.hasKey)action(async()=>{await rpc('RETRY');notice('Retry requested. Check Settings if the connection still fails.',true);});else tab('settings');});
+$('check-page').addEventListener('click',()=>action(async()=>{
+ const result=await rpc('PAGE_STATUS');
+ $('page-status').hidden=false;const output=$('page-status');output.replaceChildren();
+ const line=document.createElement('p');line.textContent=result.message;output.append(line);
+ if(result.samples?.length){for(const sample of result.samples){const row=document.createElement('p');row.textContent=`${sample.title} — Entertainment ${(sample.judgment.entertainment*100).toFixed(1)}%; hide match ${(sample.judgment.excluded*100).toFixed(1)}%; allow match ${(sample.judgment.preferred*100).toFixed(1)}%.`;output.append(row);}}
+},$<HTMLButtonElement>('check-page')));
 onStateUpdate(()=>{refresh().catch(()=>undefined);});
 refresh().then(()=>{if(location.pathname.endsWith('/settings.html'))tab('settings');if(!installed)notice('Local rehearsal. All sample judgments are authored; no live Jev calls.');}).catch(e=>notice(e.message));

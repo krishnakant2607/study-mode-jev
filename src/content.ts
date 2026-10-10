@@ -119,7 +119,14 @@ const mutations = new MutationObserver(records => {
   schedule();
 });
 mutations.observe(document.documentElement,{childList:true,subtree:true,characterData:true,attributes:true,attributeFilter:['href','title','aria-label','video-id','is-active','active']});
-if (installed) chrome.runtime.onMessage.addListener(message => {if (message.type === 'STUDY_STATE') stateChanged(message.state);});
+if (installed) chrome.runtime.onMessage.addListener((message,_sender,reply) => {
+ if(message.type==='STUDY_STATE')stateChanged(message.state);
+ if(message.type==='FOCUS_PAGE_STATUS'){
+  const cards=findCards();const results=[...decisions.entries()];
+  const samples=results.filter(([,d])=>d.kind==='allow'&&d.judgment).sort((a,b)=>b[1].judgment!.entertainment-a[1].judgment!.entertainment).slice(0,5).map(([signature,d])=>({title:(JSON.parse(signature) as Video).title,judgment:d.judgment}));
+  reply({enabled,recognized:cards.length,readable:cards.filter(c=>extractCard(c)).length,evaluated:results.length,covered:cards.filter(c=>c.classList.contains('study-covered')).length,unavailable:results.filter(([,d])=>d.reason==='connection').length,pending:queue.length+active,samples});
+ }
+});
 send('GET_STATE').then(stateChanged).catch(() => {
   // No settings can be read after an extension reload; restore the page under the balanced policy.
   for (const card of document.querySelectorAll('.study-covered')) reveal(card);

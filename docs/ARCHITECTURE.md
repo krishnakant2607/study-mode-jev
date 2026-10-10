@@ -6,9 +6,9 @@
 
 ## Judgment and policy
 
-`core.ts` supplies three Jev Noul questions: primarily entertainment, explicit positive preference match, explicit negative preference match. Keywords are optional semantic hints; missing keywords never reject a video. There is no clickbait question or requirement for lecture-style teaching. Channel context supports a decision without granting a blanket exemption.
+`core.ts` supplies one entertainment question plus optional nonblank preference questions: primarily entertainment, explicit positive preference match, explicit negative preference match. Keywords are optional semantic hints; missing keywords never reject a video. There is no clickbait question or requirement for lecture-style teaching. Channel context supports a decision without granting a blanket exemption.
 
-The deterministic policy is: explicit hide match ≥0.90 covers; explicit allow match ≥0.90 keeps; otherwise entertainment ≥0.90 covers; all other judgments keep. Empty preference fields cannot match, even if a model incorrectly assigns high preference scores. Invalid replies, missing credentials and transport failures keep content visible. Thresholds are initial policy and need live calibration.
+The deterministic policy is: explicit hide match ≥0.90 covers; explicit allow match ≥0.90 keeps; otherwise entertainment ≥0.90 covers; all other judgments keep. Empty preference fields are omitted from the request and cannot match. Classification describes primary purpose independently of code-level display thresholds. Invalid replies, missing credentials and transport failures keep content visible. Thresholds are initial policy and need live calibration.
 
 ## Execution
 

@@ -102,6 +102,7 @@ async function rpc(type, extra = {}) {
     return result.data;
   }
   const state2 = readPreview();
+  if (type === "PAGE_STATUS") return { message: "This is the authored rehearsal. Use Check this YouTube page in the installed extension on a real YouTube tab." };
   if (type === "GET_STATE") return state2;
   if (type === "SAVE_SETTINGS") {
     const rehearsal = extra.scope === "rehearsal";
@@ -167,6 +168,7 @@ if (installed) chrome.windows.getCurrent().then((window2) => {
 }).catch(() => void 0);
 var scope = installed && !new URLSearchParams(location.search).has("demo") ? "live" : "rehearsal";
 var currentTab = "focus";
+var activityScope = scope;
 var busy = false;
 var preferenceDirty = false;
 var noticeTimer;
@@ -227,7 +229,7 @@ function render() {
   $("remove-key").disabled = !state.hasKey || busy;
   $("scope-label").textContent = scope === "live" ? "Live" : "Rehearsal";
   $("scope-label").classList.toggle("rehearsal", scope === "rehearsal");
-  $("metric-scope").value = scope;
+  $("metric-scope").value = activityScope;
   const stats = scope === "live" ? state.stats : state.rehearsal;
   const summary = summarize(stats);
   for (const name of ["checked", "allowed", "covered"]) $(name).textContent = String(summary[name]);
@@ -243,9 +245,11 @@ function render() {
     meter.append(tick);
   }
   meter.setAttribute("aria-label", `${summary.allowed} visible videos; ${summary.covered} covered, including ${summary.uncertain} uncertain`);
-  $("activity-count").textContent = String(summary.checked);
-  $("activity-empty").hidden = summary.checked > 0;
-  $("activity-empty").textContent = scope === "rehearsal" ? "Open the rehearsal page to try the filter on authored sample videos." : "Open YouTube with Study Mode enabled to see your first results.";
+  const activityStats = activityScope === "live" ? state.stats : state.rehearsal;
+  const activitySummary = summarize(activityStats);
+  $("activity-count").textContent = String(activitySummary.checked);
+  $("activity-empty").hidden = activitySummary.checked > 0;
+  $("activity-empty").textContent = activityScope === "rehearsal" ? "Open the rehearsal page to try the filter on authored sample videos." : "Open YouTube with Study Mode enabled to see your first results.";
   const reasons = $("reason-list");
   reasons.replaceChildren();
   for (const reason of ["entertainment", "excluded", "preferred", "uncertain", "connection"]) {
@@ -256,19 +260,19 @@ function render() {
     const track = document.createElement("div");
     track.className = "reason-track";
     const fill = document.createElement("span");
-    fill.style.width = `${summary.checked ? summary.reasons[reason] / summary.checked * 100 : 0}%`;
+    fill.style.width = `${activitySummary.checked ? activitySummary.reasons[reason] / activitySummary.checked * 100 : 0}%`;
     track.append(fill);
     const count = document.createElement("strong");
-    count.textContent = String(summary.reasons[reason]);
+    count.textContent = String(activitySummary.reasons[reason]);
     row.append(name, track, count);
     reasons.append(row);
   }
-  const mins = Math.max(0, Math.floor((Date.now() - stats.startedAt) / 6e4));
+  const mins = Math.max(0, Math.floor((Date.now() - activityStats.startedAt) / 6e4));
   $("activity-time").textContent = mins ? `Session started ${mins} min ago` : "Session just started";
   const label = $("connection-label");
   label.textContent = scope === "rehearsal" ? "Rehearsal \xB7 authored decisions" : !state.hasKey ? "Connect Jev in Settings" : state.connection.ok ? "Jev connected" : state.connection.message;
   $("connection-dot").classList.toggle("connected", scope === "live" && installed && state.connection.ok);
-  $("connection-action").textContent = scope === "rehearsal" ? "Live" : installed && state.hasKey ? "Retry" : "Connect";
+  $("connection-action").textContent = scope === "rehearsal" ? "Settings" : installed && state.hasKey ? "Retry" : "Connect";
 }
 async function refresh() {
   state = await rpc("GET_STATE");
@@ -356,25 +360,18 @@ $("save-model").addEventListener("click", () => action(async () => {
   notice("Model saved.", true);
 }));
 $("metric-scope").addEventListener("change", () => {
-  preferenceDirty = false;
-  scope = $("metric-scope").value;
+  activityScope = $("metric-scope").value;
   render();
 });
 $("activity-link").addEventListener("click", () => tab("activity"));
 $("reset-session").addEventListener("click", () => action(async () => {
-  state = await rpc("RESET_SESSION", { scope });
+  state = await rpc("RESET_SESSION", { scope: activityScope });
   notice("A fresh session is ready.", true);
 }));
 for (const id of ["demo", "settings-demo"]) $(id).addEventListener("click", () => action(async () => {
   await rpc("OPEN_DEMO");
-  scope = "rehearsal";
-  preferenceDirty = false;
-  render();
 }));
 $("open-youtube").addEventListener("click", () => action(async () => {
-  scope = "live";
-  preferenceDirty = false;
-  render();
   await rpc("OPEN_YOUTUBE");
 }));
 $("sidebar").addEventListener("click", () => action(async () => {
@@ -383,11 +380,7 @@ $("sidebar").addEventListener("click", () => action(async () => {
 }));
 $("connection-action").addEventListener("click", () => {
   if (scope === "rehearsal") {
-    if (installed) {
-      scope = "live";
-      preferenceDirty = false;
-      render();
-    } else tab("settings");
+    tab("settings");
     return;
   }
   if (installed && state.hasKey) action(async () => {
@@ -396,6 +389,22 @@ $("connection-action").addEventListener("click", () => {
   });
   else tab("settings");
 });
+$("check-page").addEventListener("click", () => action(async () => {
+  const result = await rpc("PAGE_STATUS");
+  $("page-status").hidden = false;
+  const output = $("page-status");
+  output.replaceChildren();
+  const line = document.createElement("p");
+  line.textContent = result.message;
+  output.append(line);
+  if (result.samples?.length) {
+    for (const sample of result.samples) {
+      const row = document.createElement("p");
+      row.textContent = `${sample.title} \u2014 Entertainment ${(sample.judgment.entertainment * 100).toFixed(1)}%; hide match ${(sample.judgment.excluded * 100).toFixed(1)}%; allow match ${(sample.judgment.preferred * 100).toFixed(1)}%.`;
+      output.append(row);
+    }
+  }
+}, $("check-page")));
 onStateUpdate(() => {
   refresh().catch(() => void 0);
 });

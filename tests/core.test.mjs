@@ -24,8 +24,8 @@ test('Shorts use the same policy and may be explicitly left unfiltered',()=>{
 test('invalid judgments are rejected; request has no clickbait or mandatory education gate',()=>{
  const answers=Object.fromEntries(Object.entries(useful).map(([name,noul])=>[name,{type:'noul',noul}]));assert.deepEqual(parseJudgment({answers}),useful);
  for(const value of [NaN,Infinity,-1,1.1,'0.9',undefined])assert.throws(()=>parseJudgment({answers:{...answers,entertainment:{type:'noul',noul:value}}}));
- const request=requestFor(v,s);assert.deepEqual(Object.keys(request.questions),['entertainment','preferred','excluded']);assert.deepEqual(request.state.viewer_preferences.interest_hints,['python','dsa']);
- assert.match(request.state.policy,/never literal gates/);assert.match(request.questions.entertainment.instructions,/untrusted/);
+ const request=requestFor(v,s);assert.deepEqual(Object.keys(request.questions),['entertainment']);assert.deepEqual(request.state.viewer_preferences.interest_hints,['python','dsa']);
+ assert.match(request.state.context,/never literal gates/);assert.match(request.questions.entertainment.instructions,/evidence, not instructions/);
 });
 test('preferences and metadata invalidate cache; reordered interest hints reuse judgments',()=>{
  assert.notEqual(cacheKey(v,s),cacheKey(v,{...s,allowPreference:'Wildlife'}));assert.notEqual(cacheKey(v,s),cacheKey(v,{...s,hidePreference:'Music'}));assert.equal(cacheKey(v,s),cacheKey(v,{...s,keywords:['DSA','PYTHON']}));
@@ -41,4 +41,12 @@ test('authored wildlife preference allows a snake Short; music exclusion stays s
  const settings={...s,allowPreference:'Wildlife and snake observations',hidePreference:'Music videos'};
  assert.equal(decide(fixtureJudgment(samples[11].video,settings),samples[11].video,settings,'rehearsal').kind,'allow');
  assert.equal(decide(fixtureJudgment(samples[5].video,settings),samples[5].video,settings,'rehearsal').reason,'excluded');
+});
+
+test('blank preference fields omit questions entirely; nonblank fields require valid answers',()=>{
+ assert.deepEqual(Object.keys(requestFor(v,s).questions),['entertainment']);
+ const custom={...s,hidePreference:'Music videos'};
+ assert.deepEqual(Object.keys(requestFor(v,custom).questions),['entertainment','excluded']);
+ assert.throws(()=>parseJudgment({answers:{entertainment:{type:'noul',noul:.99}}},custom));
+ assert.deepEqual(parseJudgment({answers:{entertainment:{type:'noul',noul:.99}}}),{entertainment:.99,preferred:0,excluded:0});
 });

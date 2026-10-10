@@ -95,6 +95,7 @@ async function rpc(type, extra = {}) {
     return result.data;
   }
   const state = readPreview();
+  if (type === "PAGE_STATUS") return { message: "This is the authored rehearsal. Use Check this YouTube page in the installed extension on a real YouTube tab." };
   if (type === "GET_STATE") return state;
   if (type === "SAVE_SETTINGS") {
     const rehearsal = extra.scope === "rehearsal";

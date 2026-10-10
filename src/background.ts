@@ -68,7 +68,7 @@ async function callJev(video: Video, settings: Settings, key: string, transport:
       }
       let raw: unknown;
       try {raw = await response.json();} catch {throw new Error('Jev returned an unreadable response. Videos stay visible.');}
-      return {judgment: parseJudgment(raw), latencyMs: Date.now() - started};
+      return {judgment: parseJudgment(raw,settings), latencyMs: Date.now() - started};
     }
     throw new Error('Jev did not return a decision.');
   } finally {release();}
@@ -140,6 +140,17 @@ async function handle(message: Record<string, unknown>, sender: chrome.runtime.M
     return evaluate(normalizeVideo(message.video), rehearsal);
   }
   if (!internal(sender)) throw new Error('This action is only available in extension settings.');
+  if(message.type==='PAGE_STATUS'){
+    const tabs=await chrome.tabs.query({active:true,currentWindow:true,url:'https://www.youtube.com/*'});
+    if(!tabs[0]?.id)return {message:'Open a YouTube tab, then check from the FocusMaxx popup or sidebar.'};
+    try{
+      const health=await chrome.tabs.sendMessage(tabs[0].id,{type:'FOCUS_PAGE_STATUS'});
+      if(!health)throw new Error('Missing content script.');
+      const state=await snapshot();
+      const message=!health.enabled?'FocusMaxx is off on this page. Enable it in Focus.':!state.hasKey?'No Jev key is saved in this installation. Add it in Settings and test the connection.':!health.readable?`Detected ${health.recognized} cards, but no readable video metadata. This YouTube layout needs detector support.`:`${health.readable} readable cards; ${health.evaluated} evaluated; ${health.covered} covered; ${health.unavailable} unavailable; ${health.pending} pending. Cover threshold: 90%.`;
+      return {...health,message};
+    }catch{return {message:'Reload this YouTube tab after updating the extension, then check again.'};}
+  }
   if (message.type === 'SAVE_SETTINGS') {
     const rehearsal = message.scope === 'rehearsal';
     await serial(async () => {

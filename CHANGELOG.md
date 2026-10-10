@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.2.1 — Filtering diagnostics and live settings fix
+
+- Blank preferences omit their Jev questions entirely.
+- Separate primary-purpose classification from display policy.
+- Viewing rehearsal statistics no longer redirects live settings.
+- Add Check this YouTube page with detection counts and returned scores.
+- Discard old judgments on upgrade so videos are evaluated with the new rubric.
+
 ## 0.2.0 — FocusMaxx
 
 - Rename to FocusMaxx and refine the charcoal/orange panel.
